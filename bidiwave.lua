@@ -10,6 +10,10 @@ engine.name = "BidiWave"
 
 local midi_in_device
 local mpe_mode = false;
+local page = 2
+local wavesel = -1
+local wstartendsel = -1
+local pagepart = 1
 local envtargets = {"Amp/Filt", "Wave 1", "Wave 2", "Cross"}
 local lfowavesfreq = {0,0}
 local lfoenvwavesbalance = {0,0}
@@ -171,16 +175,16 @@ function init()
   params:add_control("wave1start", "wave 1 start", controlspec.new(0, 7, "lin", 1, 0, ""))
   params:set_action("wave1start", function(x) wavestart(1,x) end)
   
-  params:add_control("wave1start", "wave 2 start", controlspec.new(0, 7, "lin", 1, 0, ""))
-  params:set_action("wave1start", function(x) wavestart(2,x) end)
+  params:add_control("wave2start", "wave 2 start", controlspec.new(0, 7, "lin", 1, 0, ""))
+  params:set_action("wave2start", function(x) wavestart(2,x) end)
   
   params:add_control("wave1end", "wave 1 end", controlspec.new(0, 7, "lin", 1, 0, ""))
   params:set_action("wave1end", function(x) wavend(1,x) end)
   
-  params:add_control("wave1start", "wave 2 end", controlspec.new(0, 7, "lin", 1, 0, ""))
-  params:set_action("wave1start", function(x) wavend(2,x) end)
+  params:add_control("wave2end", "wave 2 end", controlspec.new(0, 7, "lin", 1, 0, ""))
+  params:set_action("wave2end", function(x) wavend(2,x) end)
   
-  params:add_control("detuneq", "detune interval", controlspec.new(-1, 1, "lin", 0, 0, ""))
+  params:add_control("detuneq", "detune interval", controlspec.new(0, 12, "lin", 0, 0, ""))
   params:set_action("detuneq", function(x) engine.detuneQ(x) end)
   
   params:add_control("filtcut", "filter cut", controlspec.new(-60, 60, "lin", 0, 0, ""))
@@ -255,16 +259,128 @@ end
 
 function redraw()
   screen.clear()
-  screen.level(4)
-  screen.move(0,10)
-  screen.text("BidiWave")
-  
-  screen.level(5)
-  screen.circle(64, 32, 5)
-  screen.fill()
+  for i = 1, 4 do
+    if i == page then
+      screen.level(8)
+    else
+      screen.level(1)
+    end
+    screen.rect((i*3),0,2,4)
+    screen.fill()
+  end
+  if page == 1 then
+    screen.level(8)
+    screen.move(20,5)
+    screen.text("MIDI")
+    screen.level(5)
+    screen.circle(64, 32, 5)
+    screen.fill()
+  elseif page == 2 then
+    screen.level(8)
+    screen.level(8)
+    screen.move(20,5)
+    screen.text("wtables")
+    screen.level(2)
+    screen.move(10,12)
+    screen.text(".wav 512")
+    screen.level(pagepart)
+    screen.rect(4,18,44,44)
+    screen.stroke()
+    if wstartendsel == 0 then screen.level(8) else screen.level(1) end
+    screen.move(15,32)
+    screen.text(params:get("wave1start")+1)
+    if wstartendsel == 1 then screen.level(8) else screen.level(1) end
+    screen.move(33,32)
+    screen.text(params:get("wave1end")+1)
+    if wstartendsel == 2 then screen.level(8) else screen.level(1) end
+    screen.move(15,52)
+    screen.text(params:get("wave2start")+1)
+    if wstartendsel == 3 then screen.level(8) else screen.level(1) end
+    screen.move(33,52)
+    screen.text(params:get("wave2end")+1)
+    for i = 1, 8 do
+      if i == wavesel+1 then
+        screen.level(8)
+      else
+        screen.level(1) 
+      end
+      screen.move(54,0+(i*8))
+      screen.text(i .. string.sub(params:get(i .. "wave"), 31))
+    end
+  elseif page == 3 then
+    screen.level(8)
+    screen.move(20,5)
+    screen.text("envs")
+  elseif page == 4 then
+    screen.level(8)
+    screen.move(20,5)
+    screen.text("mods")
+  end
   
   screen.update()
 end
   
 function cleanup()
+end
+
+
+function enc(n, d)
+  if n == 1 then
+    page = (page+d)%5
+    redraw()
+  elseif n == 2 then
+    if page == 0 then
+    elseif page == 1 then
+    elseif page == 2 then
+      if pagepart == 1 then
+        wavesel = (wavesel+d)%8
+      else
+        wstartendsel = (wstartendsel+d)%4
+      end
+    redraw()
+    elseif page == 3 then  
+    elseif page == 4 then
+    end
+ 
+  elseif n == 3 then
+    if page == 0 then
+    elseif page == 1 then 
+    elseif page == 2 then
+      if pagepart == 1 then
+      params:delta(wavesel+1 .. "wave", d)
+      redraw()
+      else
+        if wstartendsel == 0 then
+          params:delta("wave1start", d)
+        elseif wstartendsel == 1 then
+          params:delta("wave1end", d)
+        elseif wstartendsel == 2 then
+          params:delta("wave2start", d)
+        elseif wstartendsel == 3 then
+          params:delta("wave2end", d)
+        end 
+      redraw()
+      end
+    end
+  end
+end
+
+
+function key(n, z)
+  if n == 1 then
+  elseif n == 2 then
+    if page == 2 then
+      pagepart = 8
+      wavesel = -1
+      wstartendsel = -1
+      redraw()
+    end
+  elseif n == 3 then
+    if page == 2 then
+      pagepart = 1
+      wavesel = 0
+      wstartendsel = -1
+      redraw()
+    end
+  end
 end
