@@ -1,8 +1,11 @@
--- bidiwave: bidimensional wavetable synthesizer
--- 1.0.0 @marcocinque
--- 
+-- bidiwave: bidimensional 
+--                  wavetable
+--       d('u')b       synthesizer
+-- 1.0.0 @marcocinque 
 --
--- enc1 navigate
+-- enc1 > pages
+-- key3 & key4 > pages section
+-- enc3 & enc4 > values
 --
 
 
@@ -14,7 +17,9 @@ local page = 2
 local wavesel = -1
 local wstartendsel = -1
 local pagepart = 1
-local envtargets = {"Amp/Filt", "Wave 1", "Wave 2", "Cross"}
+local envtargets = {"AmpFil", "Wave1", "Wave2", "Cross"}
+local envedit = {1, 1, 1, 1}
+local valuedit = 1
 local lfowavesfreq = {0,0}
 local lfoenvwavesbalance = {0,0}
 local crossq = {0,0}
@@ -308,9 +313,38 @@ function redraw()
       screen.text(i .. string.sub(params:get(i .. "wave"), 31))
     end
   elseif page == 3 then
-    screen.level(8)
-    screen.move(20,5)
-    screen.text("envs")
+    for i = 1, 4 do
+      if envedit[i] == 1 then screen.level(8) else screen.level(1) end
+      screen.move(20+(i-1)*28,5)
+      screen.text(envtargets[i])
+    end
+    local a = 0
+    repeat a=a+1 until(envedit[a]==1)
+    screen.level(4)
+    screen.move(0,16)
+    screen.text("level")
+    for i = 1, 6 do
+      if valuedit == i then screen.level(8) else screen.level(1) end
+      screen.move(20+(i-1)*28,16)
+      screen.text(params:get("l" .. i .. envtargets[a]))
+    end
+    screen.level(4)
+    screen.move(0,24)
+    screen.text("time")
+    for i = 1, 5 do
+      if valuedit == i then screen.level(8) else screen.level(1) end
+      screen.move(20+(i-1)*28,24)
+      screen.text(params:get("t" .. i .. envtargets[a]))
+    end
+    screen.level(4)
+    screen.move(0,32)
+    screen.text("curve")
+    for i = 1, 5 do
+      if valuedit == i then screen.level(8) else screen.level(1) end
+      screen.move(20+(i-1)*28,32)
+      screen.text(params:get("c" .. i .. envtargets[a]))
+    end
+
   elseif page == 4 then
     screen.level(8)
     screen.move(20,5)
@@ -327,7 +361,6 @@ end
 function enc(n, d)
   if n == 1 then
     page = (page+d)%5
-    redraw()
   elseif n == 2 then
     if page == 0 then
     elseif page == 1 then
@@ -337,7 +370,6 @@ function enc(n, d)
       else
         wstartendsel = (wstartendsel+d)%4
       end
-    redraw()
     elseif page == 3 then  
     elseif page == 4 then
     end
@@ -348,7 +380,6 @@ function enc(n, d)
     elseif page == 2 then
       if pagepart == 1 then
       params:delta(wavesel+1 .. "wave", d)
-      redraw()
       else
         if wstartendsel == 0 then
           params:delta("wave1start", d)
@@ -359,10 +390,10 @@ function enc(n, d)
         elseif wstartendsel == 3 then
           params:delta("wave2end", d)
         end 
-      redraw()
       end
     end
   end
+  redraw()
 end
 
 
@@ -373,14 +404,14 @@ function key(n, z)
       pagepart = 8
       wavesel = -1
       wstartendsel = -1
-      redraw()
     end
   elseif n == 3 then
     if page == 2 then
       pagepart = 1
       wavesel = 0
       wstartendsel = -1
-      redraw()
+      
     end
   end
+  redraw()
 end
