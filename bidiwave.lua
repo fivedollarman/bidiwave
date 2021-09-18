@@ -19,7 +19,8 @@ local wstartendsel = -1
 local pagepart = 1
 local envtargets = {"AmpFil", "Wave1", "Wave2", "Cross"}
 local envedit = {1, 1, 1, 1}
-local valuedit = 1
+local valuedit = 0
+local pagepos = 0
 local lfowavesfreq = {0,0}
 local lfoenvwavesbalance = {0,0}
 local crossq = {0,0}
@@ -264,6 +265,7 @@ end
 
 function redraw()
   screen.clear()
+  
   for i = 1, 4 do
     if i == page then
       screen.level(8)
@@ -273,6 +275,7 @@ function redraw()
     screen.rect((i*3),0,2,4)
     screen.fill()
   end
+  
   if page == 1 then
     screen.level(8)
     screen.move(20,5)
@@ -280,6 +283,7 @@ function redraw()
     screen.level(5)
     screen.circle(64, 32, 5)
     screen.fill()
+    
   elseif page == 2 then
     screen.level(8)
     screen.level(8)
@@ -312,36 +316,43 @@ function redraw()
       screen.move(54,0+(i*8))
       screen.text(i .. string.sub(params:get(i .. "wave"), 31))
     end
+    
   elseif page == 3 then
     for i = 1, 4 do
       if envedit[i] == 1 then screen.level(8) else screen.level(1) end
       screen.move(20+(i-1)*28,5)
       screen.text(envtargets[i])
     end
+    if pagepos == 0 then
+      screen.level(4) 
+      screen.move(20+valuedit*28,8)
+      screen.line(30+valuedit*28,8)
+      screen.stroke()
+    end
     local a = 0
     repeat a=a+1 until(envedit[a]==1)
     screen.level(4)
     screen.move(0,16)
-    screen.text("level")
+    screen.text("L")
     for i = 1, 6 do
-      if valuedit == i then screen.level(8) else screen.level(1) end
-      screen.move(20+(i-1)*28,16)
+      if valuedit+1 == i and pagepos == 1 then screen.level(8) else screen.level(1) end
+      screen.move(7+(i-1)*22,16)
       screen.text(params:get("l" .. i .. envtargets[a]))
     end
     screen.level(4)
     screen.move(0,24)
-    screen.text("time")
+    screen.text("T")
     for i = 1, 5 do
-      if valuedit == i then screen.level(8) else screen.level(1) end
-      screen.move(20+(i-1)*28,24)
+      if valuedit+1 == i and pagepos == 2 then screen.level(8) else screen.level(1) end
+      screen.move(14+(i-1)*22,24)
       screen.text(params:get("t" .. i .. envtargets[a]))
     end
     screen.level(4)
     screen.move(0,32)
-    screen.text("curve")
+    screen.text("C")
     for i = 1, 5 do
-      if valuedit == i then screen.level(8) else screen.level(1) end
-      screen.move(20+(i-1)*28,32)
+      if valuedit+1 == i and pagepos == 3 then screen.level(8) else screen.level(1) end
+      screen.move(14+(i-1)*22,32)
       screen.text(params:get("c" .. i .. envtargets[a]))
     end
 
@@ -353,30 +364,39 @@ function redraw()
   
   screen.update()
 end
-  
-function cleanup()
-end
 
 
 function enc(n, d)
   if n == 1 then
     page = (page+d)%5
+    
   elseif n == 2 then
     if page == 0 then
+      
     elseif page == 1 then
+      
     elseif page == 2 then
       if pagepart == 1 then
         wavesel = (wavesel+d)%8
       else
         wstartendsel = (wstartendsel+d)%4
       end
-    elseif page == 3 then  
+      
+    elseif page == 3 and pagepos == 0 then  
+      valuedit = (valuedit+d)%4
+    elseif page == 3 and pagepos == 1 then  
+      valuedit = (valuedit+d)%6
+    elseif page == 3 and pagepos > 1 then  
+      valuedit = (valuedit+d)%5
+      
     elseif page == 4 then
     end
  
   elseif n == 3 then
     if page == 0 then
+      
     elseif page == 1 then 
+      
     elseif page == 2 then
       if pagepart == 1 then
       params:delta(wavesel+1 .. "wave", d)
@@ -391,6 +411,37 @@ function enc(n, d)
           params:delta("wave2end", d)
         end 
       end
+    
+    elseif page == 3 then
+      local enveditsum = 0
+      for i=1,4 do 
+        enveditsum = enveditsum + envedit[i]
+      end
+      if pagepos == 0 then
+        if enveditsum > 1 then
+          envedit[valuedit+1] = (envedit[valuedit+1]+d)%2
+        elseif enveditsum == 1 and envedit[valuedit+1] == 0 then
+          envedit[valuedit+1] = (envedit[valuedit+1]+d)%2
+        end
+      elseif pagepos == 1 then
+        for i = 1, 4 do
+          if envedit[i] == 1 then
+            params:delta("l" .. valuedit+1 .. envtargets[i], d)
+          end
+        end
+      elseif pagepos == 2 then
+        for i = 1, 4 do
+          if envedit[i] == 1 then
+            params:delta("t" .. valuedit+1 .. envtargets[i], d)
+          end
+        end
+     elseif pagepos == 3 then
+        for i = 1, 4 do
+          if envedit[i] == 1 then
+            params:delta("c" .. valuedit+1 .. envtargets[i], d)
+          end
+        end
+      end
     end
   end
   redraw()
@@ -399,19 +450,31 @@ end
 
 function key(n, z)
   if n == 1 then
+    
   elseif n == 2 then
-    if page == 2 then
+    
+    if page == 2 and z==1 then
       pagepart = 8
       wavesel = -1
       wstartendsel = -1
+    
+    elseif page == 3 and z==1 then
+      pagepos = (pagepos-1)%4
     end
+    
   elseif n == 3 then
-    if page == 2 then
+    
+    if page == 2 and z==1 then
       pagepart = 1
       wavesel = 0
       wstartendsel = -1
-      
+    
+    elseif page == 3 and z==1 then
+      pagepos = (pagepos+1)%4
     end
   end
   redraw()
+end
+
+function cleanup()
 end
