@@ -19,6 +19,10 @@ local wstartendsel = -1
 local pagepart = 1
 local envtargets = {"AmpFil", "Wave1", "Wave2", "Cross"}
 local envedit = {1, 1, 1, 1}
+local lvls = {0,0,0,0,0,0}
+local tms = {0,0,0,0,0}
+local crvs = {0,0,0,0,0}
+local targetedit = 0
 local valuedit = 0
 local pagepos = 0
 local lfowavesfreq = {0,0}
@@ -276,7 +280,7 @@ function redraw()
     screen.fill()
   end
   
-  if page == 1 then
+  if page == 1 then -- MIDI page
     screen.level(8)
     screen.move(20,5)
     screen.text("MIDI")
@@ -284,7 +288,7 @@ function redraw()
     screen.circle(64, 32, 5)
     screen.fill()
     
-  elseif page == 2 then
+  elseif page == 2 then -- wavetables page
     screen.level(8)
     screen.level(8)
     screen.move(20,5)
@@ -317,27 +321,25 @@ function redraw()
       screen.text(i .. string.sub(params:get(i .. "wave"), 31))
     end
     
-  elseif page == 3 then
+  elseif page == 3 then -- envelopes page
     for i = 1, 4 do
       if envedit[i] == 1 then screen.level(8) else screen.level(1) end
       screen.move(20+(i-1)*28,5)
       screen.text(envtargets[i])
     end
-    if pagepos == 0 then
-      screen.level(4) 
-      screen.move(20+valuedit*28,8)
-      screen.line(30+valuedit*28,8)
-      screen.stroke()
-    end
-    local a = 0
-    repeat a=a+1 until(envedit[a]==1)
+    if pagepos == 0 then screen.level(8) else screen.level(2) end
+    screen.move(20+targetedit*28,8)
+    screen.line(30+targetedit*28,8)
+    screen.stroke()
+
     screen.level(4)
     screen.move(0,16)
     screen.text("L")
     for i = 1, 6 do
       if valuedit+1 == i and pagepos == 1 then screen.level(8) else screen.level(1) end
       screen.move(7+(i-1)*22,16)
-      screen.text(params:get("l" .. i .. envtargets[a]))
+      lvls[i]=params:get("l" .. i .. envtargets[targetedit+1])
+      screen.text(lvls[i])
     end
     screen.level(4)
     screen.move(0,24)
@@ -345,7 +347,8 @@ function redraw()
     for i = 1, 5 do
       if valuedit+1 == i and pagepos == 2 then screen.level(8) else screen.level(1) end
       screen.move(14+(i-1)*22,24)
-      screen.text(params:get("t" .. i .. envtargets[a]))
+      tms[i]=params:get("t" .. i .. envtargets[targetedit+1])
+      screen.text(tms[i])
     end
     screen.level(4)
     screen.move(0,32)
@@ -353,8 +356,18 @@ function redraw()
     for i = 1, 5 do
       if valuedit+1 == i and pagepos == 3 then screen.level(8) else screen.level(1) end
       screen.move(14+(i-1)*22,32)
-      screen.text(params:get("c" .. i .. envtargets[a]))
+      crvs[i]=params:get("c" .. i .. envtargets[targetedit+1])
+      screen.text(crvs[i])
     end
+    -- draw envelope
+    screen.level(2)
+    screen.move(0,60)
+    screen.curve_rel(0, 0, tms[1]*2.5, (lvls[1]-lvls[2]-(crvs[1]/20))*25, tms[1]*5, (lvls[1]-lvls[2])*25)
+    screen.curve_rel(0, 0, tms[2]*2.5, (lvls[2]-lvls[3]-(crvs[2]/20))*25, tms[2]*5, (lvls[2]-lvls[3])*25)
+    screen.curve_rel(0, 0, tms[3]*2.5, (lvls[3]-lvls[4]-(crvs[3]/20))*25, tms[3]*5, (lvls[3]-lvls[4])*25)
+    screen.curve_rel(0, 0, tms[4]*2.5, (lvls[4]-lvls[5]-(crvs[4]/20))*25, tms[4]*5, (lvls[4]-lvls[5])*25)
+    screen.curve_rel(0, 0, tms[5]*2.5, (lvls[5]-lvls[6]-(crvs[5]/20))*25, tms[5]*5, (lvls[5]-lvls[6])*25)
+    screen.stroke()
 
   elseif page == 4 then
     screen.level(8)
@@ -383,7 +396,7 @@ function enc(n, d)
       end
       
     elseif page == 3 and pagepos == 0 then  
-      valuedit = (valuedit+d)%4
+      targetedit = (targetedit+d)%4
     elseif page == 3 and pagepos == 1 then  
       valuedit = (valuedit+d)%6
     elseif page == 3 and pagepos > 1 then  
@@ -413,16 +426,8 @@ function enc(n, d)
       end
     
     elseif page == 3 then
-      local enveditsum = 0
-      for i=1,4 do 
-        enveditsum = enveditsum + envedit[i]
-      end
       if pagepos == 0 then
-        if enveditsum > 1 then
-          envedit[valuedit+1] = (envedit[valuedit+1]+d)%2
-        elseif enveditsum == 1 and envedit[valuedit+1] == 0 then
-          envedit[valuedit+1] = (envedit[valuedit+1]+d)%2
-        end
+          envedit[targetedit+1] = (envedit[targetedit+1]+d)%2
       elseif pagepos == 1 then
         for i = 1, 4 do
           if envedit[i] == 1 then
