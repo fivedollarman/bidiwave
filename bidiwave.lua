@@ -347,19 +347,19 @@ function redraw()
     end
     screen.level(4)
     screen.move(0,21)
-    screen.text("T")
+    screen.text("Time")
     for i = 1, 5 do
       if valuedit+1 == i and pagepos == 2 then screen.level(8) else screen.level(1) end
-      screen.move(16+(i-1)*22,21)
+      screen.move(19+(i-1)*22,21)
       tms[i]=params:get("t" .. i .. envtargets[targetedit+1])
       screen.text(fround(tms[i],2))
     end
     screen.level(4)
     screen.move(0,28)
-    screen.text("C")
+    screen.text("Curv")
     for i = 1, 5 do
       if valuedit+1 == i and pagepos == 3 then screen.level(8) else screen.level(1) end
-      screen.move(16+(i-1)*22,28)
+      screen.move(19+(i-1)*22,28)
       crvs[i]=params:get("c" .. i .. envtargets[targetedit+1])
       screen.text(crvs[i])
     end
@@ -368,17 +368,17 @@ function redraw()
     screen.aa(1)
     screen.move(0,60-(lvls[1]*25))
     screen.curve_rel(0, 0, tms[1]*2.5, (lvls[1]-lvls[2]-(crvs[1]/20))*12.5, tms[1]*5, (lvls[1]-lvls[2])*25)
-    if params:get("looppoint")==1 then screen.text("<") end
-    if params:get("relpoint")==1 then screen.text(">") end
+    if params:get("looppoint")==1 then screen.text("L") end
+    if params:get("relpoint")==1 then screen.text("R") end
     screen.curve_rel(0, 0, tms[2]*2.5, (lvls[2]-lvls[3]-(crvs[2]/20))*12.5, tms[2]*5, (lvls[2]-lvls[3])*25)
-    if params:get("looppoint")==2 then screen.text("<") end
-    if params:get("relpoint")==2 then screen.text(">") end
+    if params:get("looppoint")==2 then screen.text("L") end
+    if params:get("relpoint")==2 then screen.text("R") end
     screen.curve_rel(0, 0, tms[3]*2.5, (lvls[3]-lvls[4]-(crvs[3]/20))*12.5, tms[3]*5, (lvls[3]-lvls[4])*25)
-    if params:get("looppoint")==3 then screen.text("<") end
-    if params:get("relpoint")==3 then screen.text(">") end
+    if params:get("looppoint")==3 then screen.text("L") end
+    if params:get("relpoint")==3 then screen.text("R") end
     screen.curve_rel(0, 0, tms[4]*2.5, (lvls[4]-lvls[5]-(crvs[4]/20))*12.5, tms[4]*5, (lvls[4]-lvls[5])*25)
-    if params:get("looppoint")==4 then screen.text("<") end
-    if params:get("relpoint")==4 then screen.text(">") end
+    if params:get("looppoint")==4 then screen.text("L") end
+    if params:get("relpoint")==4 then screen.text("R") end
     screen.curve_rel(0, 0, tms[5]*2.5, (lvls[5]-lvls[6]-(crvs[5]/20))*12.5, tms[5]*5, (lvls[5]-lvls[6])*25)
     screen.stroke()
     screen.aa(0)
@@ -387,6 +387,37 @@ function redraw()
     screen.level(8)
     screen.move(20,5)
     screen.text("mods")
+    screen.level(4)
+    screen.move(4,25)
+    screen.text("wave1")
+    screen.level(8)
+    screen.move(33,24)
+    screen.line(42,33)
+    screen.stroke()
+    screen.level(4)
+    screen.move(4,45)
+    screen.text("wave2")
+    screen.level(8)
+    screen.move(33,42)
+    screen.line(42,33)
+    screen.stroke()
+    screen.level(4)
+    screen.move(45,35)
+    screen.text("x")
+    screen.level(8)
+    screen.move(52,33)
+    screen.line(67,33)
+    screen.stroke()
+    screen.level(4)
+    screen.move(70,35)
+    screen.text("amp")
+    screen.level(8)
+    screen.move(87,33)
+    screen.line(97,33)
+    screen.stroke()
+    screen.level(4)
+    screen.move(100,35)
+    screen.text("filt")
   end
   
   screen.update()
@@ -396,6 +427,7 @@ end
 function enc(n, d)
   if n == 1 then
     page = (page+d)%5
+    pagepos = 0
     
   elseif n == 2 then
     if page == 0 then
