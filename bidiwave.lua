@@ -4,7 +4,7 @@
 -- 1.0.0 @marcocinque 
 --
 -- enc1 > pages
--- key3 & key4 > pages section
+-- key3 & key4 > page sections
 -- enc3 & enc4 > values
 --
 
