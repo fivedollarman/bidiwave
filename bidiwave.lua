@@ -25,6 +25,8 @@ local crvs = {0,0,0,0,0}
 local targetedit = 0
 local valuedit = 0
 local pagepos = 0
+local modslist = {{"detuneq", "detunelfof", "detunelfoq"}, {"lfowavesfreq1", "lfoenvbal1"}, {"noteoffset", "lfowavesfreq2", "lfoenvbal2"}, {"crossmodql", "crossmodqr", "lfoxfreq", "lfoenvxbal"}, {"filtcut", "filtres", "filtenv"}}
+local modslistnm = {{"det", "lfn F", "lfn Q"}, {"lfn F", "lfn/env"}, {"offset", "lfn F", "lfn/env"}, {"xQ left", "xQ right", "lfn F", "lfn/env"}, {"cut", "res", "env"}}
 local lfowavesfreq = {0,0}
 local lfoenvwavesbalance = {0,0}
 local crossq = {0,0}
@@ -387,35 +389,35 @@ function redraw()
     screen.level(8)
     screen.move(20,5)
     screen.text("mods")
-    screen.level(4)
+    if pagepos == 0 or pagepos == 1 then screen.level(8) else screen.level(2) end
     screen.move(4,25)
     screen.text("wave1")
     screen.level(8)
     screen.move(33,24)
     screen.line(42,33)
     screen.stroke()
-    screen.level(4)
+    if pagepos == 0 or pagepos == 2 then screen.level(8) else screen.level(2) end
     screen.move(4,45)
     screen.text("wave2")
     screen.level(8)
     screen.move(33,42)
     screen.line(42,33)
     screen.stroke()
-    screen.level(4)
+    if pagepos == 3 then screen.level(8) else screen.level(2) end
     screen.move(45,35)
     screen.text("x")
     screen.level(8)
     screen.move(52,33)
     screen.line(67,33)
     screen.stroke()
-    screen.level(4)
+    screen.level(3)
     screen.move(70,35)
     screen.text("amp")
     screen.level(8)
     screen.move(87,33)
     screen.line(97,33)
     screen.stroke()
-    screen.level(4)
+    if pagepos == 4 then screen.level(8) else screen.level(2) end
     screen.move(100,35)
     screen.text("filt")
   end
@@ -451,6 +453,9 @@ function enc(n, d)
       params:delta("looppoint", d)
       
     elseif page == 4 then
+      if pagepos == 0 then
+        
+      end
     end
  
   elseif n == 3 then
@@ -515,6 +520,9 @@ function key(n, z)
     
     elseif page == 3 and z==1 then
       pagepos = (pagepos-1)%5
+      
+    elseif page == 4 and z==1 then
+      pagepos = (pagepos-1)%4
     end
     
   elseif n == 3 then
@@ -526,6 +534,10 @@ function key(n, z)
     
     elseif page == 3 and z==1 then
       pagepos = (pagepos+1)%5
+      
+    elseif page == 4 and z==1 then
+      pagepos = (pagepos+1)%4
+      
     end
   end
   redraw()
