@@ -98,6 +98,11 @@ local function midi_event(data)
   
 end
 
+function fround(number, decimals)
+  local scale = 10^decimals
+  local c = 2^52 + 2^51
+  return ((number * scale + c ) - c) / scale
+end
 
 -- envelopes
 local function envelopes(param,point,target,value)
@@ -327,11 +332,10 @@ function redraw()
       screen.move(20+(i-1)*28,5)
       screen.text(envtargets[i])
     end
-    if pagepos == 0 then screen.level(8) else screen.level(2) end
+    if pagepos == 0 then screen.level(12) else screen.level(2) end
     screen.move(20+targetedit*28,8)
     screen.line(30+targetedit*28,8)
     screen.stroke()
-
     screen.level(4)
     screen.move(0,16)
     screen.text("L")
@@ -348,7 +352,7 @@ function redraw()
       if valuedit+1 == i and pagepos == 2 then screen.level(8) else screen.level(1) end
       screen.move(14+(i-1)*22,24)
       tms[i]=params:get("t" .. i .. envtargets[targetedit+1])
-      screen.text(tms[i])
+      screen.text(fround(tms[i],2))
     end
     screen.level(4)
     screen.move(0,32)
@@ -360,13 +364,13 @@ function redraw()
       screen.text(crvs[i])
     end
     -- draw envelope
-    screen.level(2)
-    screen.move(0,60)
-    screen.curve_rel(0, 0, tms[1]*2.5, (lvls[1]-lvls[2]-(crvs[1]/20))*25, tms[1]*5, (lvls[1]-lvls[2])*25)
-    screen.curve_rel(0, 0, tms[2]*2.5, (lvls[2]-lvls[3]-(crvs[2]/20))*25, tms[2]*5, (lvls[2]-lvls[3])*25)
-    screen.curve_rel(0, 0, tms[3]*2.5, (lvls[3]-lvls[4]-(crvs[3]/20))*25, tms[3]*5, (lvls[3]-lvls[4])*25)
-    screen.curve_rel(0, 0, tms[4]*2.5, (lvls[4]-lvls[5]-(crvs[4]/20))*25, tms[4]*5, (lvls[4]-lvls[5])*25)
-    screen.curve_rel(0, 0, tms[5]*2.5, (lvls[5]-lvls[6]-(crvs[5]/20))*25, tms[5]*5, (lvls[5]-lvls[6])*25)
+    screen.level(4)
+    screen.move(0,60-(lvls[1]*25))
+    screen.curve_rel(0, 0, tms[1]*2.5, (lvls[1]-lvls[2]-(crvs[1]/20))*12.5, tms[1]*5, (lvls[1]-lvls[2])*25)
+    screen.curve_rel(0, 0, tms[2]*2.5, (lvls[2]-lvls[3]-(crvs[2]/20))*12.5, tms[2]*5, (lvls[2]-lvls[3])*25)
+    screen.curve_rel(0, 0, tms[3]*2.5, (lvls[3]-lvls[4]-(crvs[3]/20))*12.5, tms[3]*5, (lvls[3]-lvls[4])*25)
+    screen.curve_rel(0, 0, tms[4]*2.5, (lvls[4]-lvls[5]-(crvs[4]/20))*12.5, tms[4]*5, (lvls[4]-lvls[5])*25)
+    screen.curve_rel(0, 0, tms[5]*2.5, (lvls[5]-lvls[6]-(crvs[5]/20))*12.5, tms[5]*5, (lvls[5]-lvls[6])*25)
     screen.stroke()
 
   elseif page == 4 then
