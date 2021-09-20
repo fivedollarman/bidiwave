@@ -428,9 +428,9 @@ function redraw()
     
       for i = 1, #modslist[pagepos+1] do
         if valuedit+1 == i then screen.level(8) else screen.level(2) end
-        screen.move(4+((i-1)*33),60)
+        screen.move(4+((i-1)*34),60)
         screen.text(modslistnm[pagepos+1][i])
-        screen.move(4+screen.text_extents(modslistnm[pagepos+1][i])+2+((i-1)*33),60)
+        screen.move(4+screen.text_extents(modslistnm[pagepos+1][i])+2+((i-1)*34),60)
         screen.text(params:get(modslist[pagepos+1][i]))
       end
   end
