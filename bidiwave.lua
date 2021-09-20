@@ -427,7 +427,7 @@ function redraw()
     screen.text("filt")
     
       for i = 1, #modslist[pagepos+1] do
-        if valuedit == i then screen.level(8) else screen.level(2) end
+        if valuedit+1 == i then screen.level(8) else screen.level(2) end
         screen.move(4+((i-1)*33),60)
         screen.text(modslistnm[pagepos+1][i])
         screen.move(4+screen.text_extents(modslistnm[pagepos+1][i])+2+((i-1)*33),60)
@@ -466,9 +466,7 @@ function enc(n, d)
       params:delta("looppoint", d)
       
     elseif page == 4 then
-      if pagepos == 0 then
-        
-      end
+      valuedit = (valuedit+d) % #modslist[pagepos+1]
     end
  
   elseif n == 3 then
@@ -514,10 +512,13 @@ function enc(n, d)
         end
      elseif pagepos == 4 then
        params:delta("relpoint", d)
-      end
-    end
-  end
-  redraw()
+     end
+     
+   elseif page == 4 then
+     params:delta(modslist[pagepos+1][valuedit+1], d)
+   end
+ end
+ redraw()
 end
 
 
