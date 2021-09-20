@@ -10,7 +10,7 @@
 
 
 engine.name = "BidiWave"
-
+local MusicUtil = require "musicutil"
 local midi_in_device
 local mpe_mode = false;
 local page = 2
@@ -26,7 +26,7 @@ local targetedit = 0
 local valuedit = 0
 local pagepos = 0
 local modslist = {{"detuneq", "detunelfof", "detunelfoq"}, {"lfowavesfreq1", "lfoenvbal1"}, {"noteoffset", "lfowavesfreq2", "lfoenvbal2"}, {"crossmodql", "crossmodqr", "lfoxfreq", "lfoenvxbal"}, {"filtcut", "filtres", "filtenv"}}
-local modslistnm = {{"det", "lfn F", "lfn Q"}, {"lfn F", "lfn/env"}, {"offset", "lfn F", "lfn/env"}, {"xQ left", "xQ right", "lfn F", "lfn/env"}, {"cut", "res", "env"}}
+local modslistnm = {{"det", "nF", "/"}, {"nF", "/"}, {"trnsp", "nF", "/"}, {"QL", "QR", "nF", "/"}, {"cut", "res", "env"}}
 local lfowavesfreq = {0,0}
 local lfoenvwavesbalance = {0,0}
 local crossq = {0,0}
@@ -78,11 +78,12 @@ local function midi_event(data)
     -- Pitch bend
     elseif msg.type == "pitchbend" then
       local bend_st = (util.round(msg.val / 2)) / 8192 * 2 -1 -- Convert to -1 to 1
+      print(bend_st)
       local bend_range = params:get("bend_range")
       if mpe_mode then
-        engine.pitchBend(msg.ch, MusicUtil.interval_to_ratio(bend_st * bend_range))
+        engine.pitchBend(MusicUtil.interval_to_ratio(bend_st * bend_range))
       else
-        engine.pitchBendAll(MusicUtil.interval_to_ratio(bend_st * bend_range))
+        engine.pitchBend(MusicUtil.interval_to_ratio(bend_st * bend_range))
       end
       
     -- CC
@@ -243,7 +244,7 @@ function init()
   params:set_action("relpoint", function(x) engine.releasePoint(x) end)
   
   params:add_control("envoffset", "envelopes offset", controlspec.new(-5, 5, "lin", 0, 0, ""))
-  params:set_action("envoffset", function(x) envelopesoffset(msg.note,x) end)
+  -- params:set_action("envoffset", function(x) envelopesoffset(msg.note,x) end)
   
   params:add_separator("lfos")
   
@@ -270,6 +271,10 @@ function init()
   
   params:add_control("lfoenvxbal", "lfo env cross mod bal", controlspec.new(0, 1, "lin", 0, 0, ""))
   params:set_action("lfoenvxbal", function(x) engine.lfoXFreq(x) end)
+  
+  -- load default pset
+  params:read()
+  params:bang()
   
 end
 
@@ -335,8 +340,8 @@ function redraw()
       screen.text(envtargets[i])
     end
     if pagepos == 0 then screen.level(12) else screen.level(2) end
-    screen.move(20+targetedit*28,8)
-    screen.line(30+targetedit*28,8)
+    screen.move(20+targetedit*28,7)
+    screen.line(30+targetedit*28,7)
     screen.stroke()
     screen.level(4)
     screen.move(0,14)
@@ -385,7 +390,7 @@ function redraw()
     screen.stroke()
     screen.aa(0)
 
-  elseif page == 4 then
+  elseif page == 4 then -- modulations page
     screen.level(8)
     screen.move(20,5)
     screen.text("mods")
@@ -420,6 +425,14 @@ function redraw()
     if pagepos == 4 then screen.level(8) else screen.level(2) end
     screen.move(100,35)
     screen.text("filt")
+    
+      for i = 1, #modslist[pagepos+1] do
+        if valuedit == i then screen.level(8) else screen.level(2) end
+        screen.move(4+((i-1)*33),60)
+        screen.text(modslistnm[pagepos+1][i])
+        screen.move(4+screen.text_extents(modslistnm[pagepos+1][i])+2+((i-1)*33),60)
+        screen.text(params:get(modslist[pagepos+1][i]))
+      end
   end
   
   screen.update()
@@ -522,7 +535,7 @@ function key(n, z)
       pagepos = (pagepos-1)%5
       
     elseif page == 4 and z==1 then
-      pagepos = (pagepos-1)%4
+      pagepos = (pagepos-1)%5
     end
     
   elseif n == 3 then
@@ -536,7 +549,7 @@ function key(n, z)
       pagepos = (pagepos+1)%5
       
     elseif page == 4 and z==1 then
-      pagepos = (pagepos+1)%4
+      pagepos = (pagepos+1)%5
       
     end
   end
