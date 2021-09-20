@@ -13,7 +13,8 @@ engine.name = "BidiWave"
 local MusicUtil = require "musicutil"
 local midi_in_device
 local mpe_mode = false;
-local page = 2
+local face = 5
+local page = 0
 local wavesel = -1
 local wstartendsel = -1
 local pagepart = 1
@@ -285,6 +286,8 @@ function redraw()
   for i = 1, 4 do
     if i == page then
       screen.level(8)
+    elseif page == 0 then
+      screen.level(0)
     else
       screen.level(1)
     end
@@ -292,7 +295,24 @@ function redraw()
     screen.fill()
   end
   
-  if page == 1 then -- MIDI page
+  if page == 0 then -- hello page
+    screen.move(64, 32)
+    for i = 1, face do
+      screen.line_width(2)
+      screen.level(math.floor(i*0.35)+1)
+      screen.circle(64, 32, math.floor(i*i*0.5))
+      screen.stroke()
+    end
+    screen.line_width(1)
+    screen.level(12)
+    screen.font_face(face)
+    screen.font_size(32)
+    screen.move(0,46)
+    screen.text("bidiwave")
+    screen.font_face(2)
+    screen.font_size(8)
+    
+  elseif page == 1 then -- MIDI page
     screen.level(8)
     screen.move(20,5)
     screen.text("MIDI")
@@ -471,6 +491,7 @@ function enc(n, d)
  
   elseif n == 3 then
     if page == 0 then
+      face = (face+d)%16
       
     elseif page == 1 then 
       
