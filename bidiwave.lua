@@ -10,9 +10,16 @@
 
 
 engine.name = "BidiWave"
+local arpegg = require "bidiarp"
 local MusicUtil = require "musicutil"
 local midi_in_device
 local mpe_mode = false;
+local bidinote = 0
+local bidid = 0
+local counteight = 0
+local countonid = 0
+local countoffid = 0
+local lasteight = {0,0,0,0,0,0,0,0}
 local face = 5
 local page = 0
 local wavesel = -1
@@ -54,36 +61,57 @@ local function midi_event(data)
     
     -- Note off
     if msg.type == "note_off" then
-      if mpe_mode then
-        engine.noteOff(msg.note)
-      else
-        engine.noteOff(msg.note)
+      bidinote = msg.note
+      for i = 1, 8 do
+        if lasteight[i]==bidinote
+          countoffid = (countoffid+1)%8
+          bidid = bidinote*(countoffid+1)
+        else
+          bidid = bidinote
+        end
       end
+      
       
       if params:get("arpeggiator") == 2 then
         for i=1,#arparray do
-          if arparray[i] == msg.note then
+          if arparray[i] == bidinote then
             table.remove(arparray,i)
           end
+        end
+      else
+        if mpe_mode then
+          engine.noteOff(bidid)
+        else
+          engine.noteOff(bidid)
         end
       end
     
     -- Note on
     elseif msg.type == "note_on" then
-      if mpe_mode then
-        engine.noteOn(msg.ch, msg.note, msg.vel / 127)
-      else
-        engine.noteOn(msg.note, msg.note, msg.vel / 127)
-      end
-      -- print("note " .. msg.note)
       face = (face+1)%16
       if page == 0 then redraw() end
       
-      if params:get("arpeggiator") == 2 then
-        arparray[#arparray+1] = msg.note
+      bidinote = msg.note
+      for i = 1, 8 do
+        if lasteight[i]==bidinote
+          countonid = (countonid+1)%8
+          bidid = bidinote*(countonid+1)
+        else
+          bidid = bidinote
+        end
       end
+      counteight = (counteight+1)%8
+      lasteight[counteight+1] = bidinote
       
-      
+      if params:get("arpeggiator") == 2 then
+        arparray[#arparray+1] = bidinote
+      else
+        if mpe_mode then
+          engine.noteOn(bidid, bidinote, msg.vel / 127)
+        else
+          engine.noteOn(bidid, bidinote, msg.vel / 127)
+        end
+      end
 
     -- Key pressure
     elseif msg.type == "key_pressure" then
@@ -331,6 +359,7 @@ function redraw()
     screen.font_size(32)
     screen.move(0,46)
     screen.text("bidiwave")
+    screen.font_face(0)
     screen.font_size(8)
     screen.level(1)
     screen.rect(0,54,128,10)
@@ -350,7 +379,6 @@ function redraw()
     screen.move(60,62)
     screen.level(12)
     screen.text(psetnum)
-    screen.font_face(0)
     
   elseif page == 1 then -- MIDI page
     screen.level(8)
