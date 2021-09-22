@@ -4,15 +4,13 @@
 
 Engine_BidiWave : CroneEngine {
 
-	classvar maxNumVoices = 8;
+	classvar maxNumVoices = 10;
 	var voiceGroup;
 	var voiceList;
 
 	var pitchBendRatio = 1;
-	var channelPressure = 0;
-	var channelTimbre = 0;
+	var modwheel = 0;
 	var velQ = 0.25;
-	
 	var out=0, offsetnote=0, prevnote=0, slideT=0, amp=0.25;
 	var detQ=0.0125, lfdetF=0.5, lfdetQ=0.1, cut=0, filtEnvQ=12, reson=1, lfxF=0.125, xlfEnvQ=0.5;
 	var lfwaveF, xQ, lfEnvQ, waveStart, waveEnd;
@@ -86,7 +84,7 @@ Engine_BidiWave : CroneEngine {
 
 		// Synth voice
 		SynthDef(\BidiWave, {
-			arg out, buf=wbuff[0].bufnum, gate=0, killGate=1, note=64, offsetnote=0, prevnote=64, pitchBendRatio=1, pressure, slideT, amp=0.05, 
+			arg out, buf=wbuff[0].bufnum, gate=0, killGate=1, note=64, offsetnote=0, prevnote=64, pitchBendRatio=1, modw, slideT, amp=0.05, 
 			  detQ, lfdetF, lfdetQ, lfxF, lfwaveF=#[0.25,0.8], lfEnvQ=#[1,1], waveStart=#[0,4], waveEnd=#[2,6], xlfEnvQ, xQ, cut, filtEnvQ, reson,
 	      l1=#[0,0,0,0], l2=#[1,1,1,1], l3=#[0.5,0.25,0.5,0.25], l4=#[0.125,0.5,0.25,0.5], l5=#[0.5,0.5,0.5,0.5], l6=#[0,1,0,1],
         t1=#[0.01,0.02,0.1,0.5], t2=#[4,3,2,1], t3=#[1,2,3,4], t4=#[2,1.5,1,0.5], t5=#[8,6,4,2],
@@ -95,7 +93,7 @@ Engine_BidiWave : CroneEngine {
       var envelope, killEnvelope, signal, envp, bufpos, xfade, detSig, notesli;
 
 			killGate = killGate + Impulse.kr(0); 
-			killEnvelope = EnvGen.kr(envelope: Env.asr( 0, 1, 0.05), gate: killGate, doneAction: Done.freeSelf);
+			killEnvelope = EnvGen.kr(envelope: Env.asr( 0, 1, 0.5), gate: killGate, doneAction: Done.freeSelf);
 			
 			envp = Env.new([l1,l2,l3,l4,l5,l6],[t1,t2,t3,t4,t5],[c1,c2,c3,c4,c5],relP,loopP,offset);
 			envelope = EnvGen.kr(envelope: envp, gate: gate, doneAction: [Done.freeSelf,0,0,0]);
@@ -107,7 +105,7 @@ Engine_BidiWave : CroneEngine {
      	
     	signal = XFade2.ar(VOsc.ar(bufpos[0], notesli.midicps * detSig * pitchBendRatio), VOsc.ar(bufpos[1], (notesli+offsetnote).midicps * detSig * pitchBendRatio), xfade);
     	signal = Splay.ar(signal) * envelope[0];
-    	signal = RLPF.ar(signal, envelope[0].range(cut+note, cut+note+(filtEnvQ*amp)).midicps, reson);
+    	signal = RLPF.ar(signal, Clip.kr(envelope[0].range(cut+note, cut+note+(filtEnvQ*amp)).midicps,8,24000), reson);
       Out.ar(out, signal * amp * 0.2);
 		}).add;
 
@@ -217,26 +215,10 @@ Engine_BidiWave : CroneEngine {
 			voiceGroup.set(\pitchBendRatio, pitchBendRatio);
 		});
 
-		// pressure(id, note, pressure)
-		this.addCommand(\pressure, "iff", { arg msg;
-			var voice = voiceList.detect{arg v; v.id == msg[1]};
-			if(voice.notNil, {
-				// voice.theSynth.set(\pressure, msg[2]);
-			});
-		});
-
-		// timbre(id, timbre)
-		this.addCommand(\timbre, "if", { arg msg;
-			var voice = voiceList.detect{arg v; v.id == msg[1]};
-			if(voice.notNil, {
-				// voice.theSynth.set(\timbre, msg[2]);
-			});
-		});
-
-		// timbreAll(timbre)
-		this.addCommand(\timbreAll, "f", { arg msg;
-			channelTimbre = msg[1];
-			// voiceGroup.set(\timbre, channelTimbre);
+		// modwheel(timbre)
+		this.addCommand(\modwheel, "f", { arg msg;
+			modwheel = msg[1];
+			voiceGroup.set(\modw, modwheel);
 		});
 		
 	  // assignWave(id,path)
