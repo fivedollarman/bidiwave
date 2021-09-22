@@ -33,6 +33,11 @@ local lfoenvwavesbalance = {0,0}
 local crossq = {0,0}
 local wstart = {0,0}
 local wend = {0,0}
+local savecolor = 12
+local loadcolor = 12
+local psetnum = 1
+local arparray = {}
+local arp = {"off","on"}
 
 -- MIDI input
 local function midi_event(data)
@@ -54,6 +59,14 @@ local function midi_event(data)
       else
         engine.noteOff(msg.note)
       end
+      
+      if params:get("arpeggiator") == 2 then
+        for i=1,#arparray do
+          if arparray[i] == msg.note then
+            table.remove(arparray,i)
+          end
+        end
+      end
     
     -- Note on
     elseif msg.type == "note_on" then
@@ -62,7 +75,15 @@ local function midi_event(data)
       else
         engine.noteOn(msg.note, msg.note, msg.vel / 127)
       end
-      print("note " .. msg.note)
+      -- print("note " .. msg.note)
+      face = (face+1)%16
+      if page == 0 then redraw() end
+      
+      if params:get("arpeggiator") == 2 then
+        arparray[#arparray+1] = msg.note
+      end
+      
+      
 
     -- Key pressure
     elseif msg.type == "key_pressure" then
@@ -172,6 +193,7 @@ function init()
   table.insert(channels, "MPE")
   params:add{type = "option", id = "midi_channel", name = "MIDI Channel", options = channels}
   params:add{type = "number", id = "bend_range", name = "Pitch Bend Range", min = 1, max = 48, default = 2}
+  params:add_option("arpeggiator","arpeggiator",arp,1)
   
   params:add_separator("waves")
  
@@ -212,7 +234,7 @@ function init()
   params:add_control("filtenv", "filter envelope Q", controlspec.new(-60, 60, "lin", 0, 0, ""))
   params:set_action("filtenv", function(x) engine.filtCut(x) end)
   
-  params:add_control("filtres", "filter resonance", controlspec.new(0.01, 1, "lin", 0, 1, ""))
+  params:add_control("filtres", "filter resonance", controlspec.new(0.01, 1, "lin", 0.01, 1, ""))
   params:set_action("filtres", function(x) engine.filtRes(x) end)
     
   params:add_separator("envelopes")
@@ -309,8 +331,26 @@ function redraw()
     screen.font_size(32)
     screen.move(0,46)
     screen.text("bidiwave")
-    screen.font_face(2)
     screen.font_size(8)
+    screen.level(1)
+    screen.rect(0,54,128,10)
+    screen.fill()
+    screen.move(2,62)
+    screen.level(savecolor)
+    screen.text("SAVE")
+    screen.move(23,62)
+    screen.level(12)
+    screen.text("/")
+    screen.move(26,62)
+    screen.level(loadcolor)
+    screen.text("LOAD")
+    screen.move(48,62)
+    screen.level(12)
+    screen.text("->")
+    screen.move(60,62)
+    screen.level(12)
+    screen.text(psetnum)
+    screen.font_face(0)
     
   elseif page == 1 then -- MIDI page
     screen.level(8)
@@ -448,9 +488,9 @@ function redraw()
     
       for i = 1, #modslist[pagepos+1] do
         if valuedit+1 == i then screen.level(8) else screen.level(2) end
-        screen.move(4+((i-1)*34),60)
+        screen.move(((i-1)*34),60)
         screen.text(modslistnm[pagepos+1][i])
-        screen.move(4+screen.text_extents(modslistnm[pagepos+1][i])+2+((i-1)*34),60)
+        screen.move(screen.text_extents(modslistnm[pagepos+1][i])+2+((i-1)*34),60)
         screen.text(params:get(modslist[pagepos+1][i]))
       end
   end
@@ -466,6 +506,7 @@ function enc(n, d)
     
   elseif n == 2 then
     if page == 0 then
+      psetnum = (psetnum+d)%128
       
     elseif page == 1 then
       
@@ -548,7 +589,13 @@ function key(n, z)
     
   elseif n == 2 then
     
-    if page == 2 and z==1 then
+    if page == 0 and z==1 then
+      savecolor = 0
+    elseif page == 0 and z==0 then
+      savecolor = 12
+      params:write(psetnum)
+
+    elseif page == 2 and z==1 then
       pagepart = 8
       wavesel = -1
       wstartendsel = -1
@@ -562,7 +609,13 @@ function key(n, z)
     
   elseif n == 3 then
     
-    if page == 2 and z==1 then
+    if page == 0 and z==1 then
+      loadcolor = 0
+    elseif page == 0 and z==0 then
+      loadcolor = 12
+      params:read(psetnum)
+    
+    elseif page == 2 and z==1 then
       pagepart = 1
       wavesel = 0
       wstartendsel = -1
