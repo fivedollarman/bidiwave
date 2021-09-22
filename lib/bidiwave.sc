@@ -4,44 +4,44 @@
 
 Engine_BidiWave : CroneEngine {
 
-	classvar maxNumVoices = 10;
-	var voiceGroup;
-	var voiceList;
+  classvar maxNumVoices = 10;
+  var voiceGroup;
+  var voiceList;
 
-	var pitchBendRatio = 1;
-	var modwheel = 0;
-	var velQ = 0.25;
-	var out=0, offsetnote=0, prevnote=0, slideT=0, amp=0.25;
-	var detQ=0.0125, lfdetF=0.5, lfdetQ=0.1, cut=0, filtEnvQ=12, reson=1, lfxF=0.125, xlfEnvQ=0.5;
-	var lfwaveF, xQ, lfEnvQ, waveStart, waveEnd;
-	var l1, l2, l3, l4, l5, l6;
-  var	t1, t2, t3, t4, t5;
+  var pitchBendRatio = 1;
+  var modwheel = 0;
+  var velQ = 0.25;
+  var out=0, offsetnote=0, prevnote=0, slideT=0, amp=0.25;
+  var detQ=0.0125, lfdetF=0.5, lfdetQ=0.1, cut=0, filtEnvQ=12, reson=1, lfxF=0.125, xlfEnvQ=0.5;
+  var lfwaveF, xQ, lfEnvQ, waveStart, waveEnd;
+  var l1, l2, l3, l4, l5, l6;
+  var t1, t2, t3, t4, t5;
   var c1, c2, c3, c4, c5;
   var relP=3, loopP=1, offset=0;
 	
-	var warray;
-	var wbuff;
-	var wload;
+  var warray;
+  var wbuff;
+  var wload;
 	
-	*new { arg context, doneCallback;
-		^super.new(context, doneCallback);
-	}
+  *new { arg context, doneCallback;
+	^super.new(context, doneCallback);
+  }
 
-	alloc {
+  alloc {
 	
-	  warray = Array.newClear(8);
-	  wbuff = Buffer.allocConsecutive(8,context.server,1024);
+       warray = Array.newClear(8);
+       wbuff = Buffer.allocConsecutive(8,context.server,1024);
 	  
-	  wload = {
-    	arg index, pt;
-    	var file, arr;
-	    file = SoundFile.openRead(pt);
-      arr = FloatArray.newClear(file.numFrames);
-      file.readData(arr);
-      file.close;
-      arr = arr.as(Signal);
-    	arr = arr.asWavetable;
-    	warray[index] = arr;
+       wload = {
+       arg index, pt;
+       var file, arr;
+       file = SoundFile.openRead(pt);
+       arr = FloatArray.newClear(file.numFrames);
+       file.readData(arr);
+       file.close;
+       arr = arr.as(Signal);
+       arr = arr.asWavetable;
+       warray[index] = arr;
     };
     
 //    wload.value(0, "/home/we/dust/audio/wavetables/sin_0001.wav");
