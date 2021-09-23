@@ -10,16 +10,17 @@
 
 
 engine.name = "BidiWave"
-local arpegg = require "bidiarp"
+local bidiarp = include("lib/bidiarp")
+
 local MusicUtil = require "musicutil"
 local midi_in_device
 local mpe_mode = false;
 local bidinote = 0
 local bidid = 0
+local bididoff = {}
 local counteight = 0
 local countonid = 0
-local countoffid = 0
-local lasteight = {0,0,0,0,0,0,0,0}
+local lastfive = {0,0,0,0,0}
 local face = 5
 local page = 0
 local wavesel = -1
@@ -45,6 +46,7 @@ local loadcolor = 12
 local psetnum = 1
 local arparray = {}
 local arp = {"off","on"}
+local arpvoice = {}
 
 -- MIDI input
 local function midi_event(data)
@@ -62,15 +64,6 @@ local function midi_event(data)
     -- Note off
     if msg.type == "note_off" then
       bidinote = msg.note
-      for i = 1, 8 do
-        if lasteight[i]==bidinote
-          countoffid = (countoffid+1)%8
-          bidid = bidinote*(countoffid+1)
-        else
-          bidid = bidinote
-        end
-      end
-      
       
       if params:get("arpeggiator") == 2 then
         for i=1,#arparray do
@@ -78,51 +71,34 @@ local function midi_event(data)
             table.remove(arparray,i)
           end
         end
+      arpvoice[1] = clock.run(bidiarp.seq,1,4,#arparray,arparray)
       else
-        if mpe_mode then
-          engine.noteOff(bidid)
-        else
-          engine.noteOff(bidid)
-        end
+        engine.noteOff(bididoff[bidinote])
       end
     
     -- Note on
     elseif msg.type == "note_on" then
       face = (face+1)%16
       if page == 0 then redraw() end
-      
       bidinote = msg.note
-      for i = 1, 8 do
-        if lasteight[i]==bidinote
-          countonid = (countonid+1)%8
-          bidid = bidinote*(countonid+1)
-        else
-          bidid = bidinote
-        end
-      end
-      counteight = (counteight+1)%8
-      lasteight[counteight+1] = bidinote
       
       if params:get("arpeggiator") == 2 then
         arparray[#arparray+1] = bidinote
+        arpvoice[1] = clock.run(bidiarp.seq,1,4,#arparray,arparray)
       else
-        if mpe_mode then
-          engine.noteOn(bidid, bidinote, msg.vel / 127)
-        else
-          engine.noteOn(bidid, bidinote, msg.vel / 127)
+        for i = 1, 5 do
+          if lastfive[i]==bidinote then
+            countonid = (countonid+1)%8
+            bidid = bidinote*(countonid+2)
+            bididoff[bidinote] = bidid
+          else
+            bidid = bidinote
+            bididoff[bidinote] = bidid
+          end
         end
-      end
-
-    -- Key pressure
-    elseif msg.type == "key_pressure" then
-      engine.pressure(msg.note, msg.note, msg.val / 127)
-      
-    -- Channel pressure
-    elseif msg.type == "channel_pressure" then
-      if mpe_mode then
-        engine.pressure(msg.ch, msg.note, msg.val / 127)
-      else
-        engine.pressureAll(msg.val / 127)
+        counteight = (counteight+1)%8
+        lasteight[counteight+1] = bidinote
+        engine.noteOn(bidid, bidinote, msg.vel / 127)
       end
       
     -- Pitch bend
@@ -140,9 +116,7 @@ local function midi_event(data)
     elseif msg.type == "cc" then
       -- Mod wheel
       if msg.cc == 1 then
-        engine.timbreAll(msg.val / 127)
-      elseif msg.cc == 74 and mpe_mode then
-        engine.timbre(msg.ch, msg.val / 127)
+        engine.modwheel(msg.val / 127)
       end
       
     end
@@ -231,6 +205,9 @@ function init()
   end
   
   params:add_separator()
+  
+  params:add_control("portamento", "portamento", controlspec.new(0, 5, "lin", 0, 0, "s"))
+  params:set_action("portamento", function(x) engine.portam(x) end)
   
   params:add_control("noteoffset", "osc 2 note offset", controlspec.new(-36, 36, "lin", 1, 0, ""))
   params:set_action("noteoffset", function(x) engine.noteOffset(x) end)
@@ -348,7 +325,7 @@ function redraw()
   if page == 0 then -- hello page
     screen.move(64, 32)
     for i = 1, face do
-      screen.line_width(2)
+      screen.line_width(1)
       screen.level(math.floor(i*0.35)+1)
       screen.circle(64, 32, math.floor(i*i*0.5))
       screen.stroke()
@@ -367,7 +344,7 @@ function redraw()
     screen.move(2,62)
     screen.level(savecolor)
     screen.text("SAVE")
-    screen.move(23,62)
+    screen.move(21,62)
     screen.level(12)
     screen.text("/")
     screen.move(26,62)
@@ -537,6 +514,7 @@ function enc(n, d)
       psetnum = (psetnum+d)%128
       
     elseif page == 1 then
+      -- clock.cancel(arpvoice[1])
       
     elseif page == 2 then
       if pagepart == 1 then
