@@ -18,7 +18,6 @@ local mpe_mode = false;
 local bidinote = 0
 local bidid = 0
 local bididoff = {}
-local counteight = 0
 local countonid = 0
 local lastfive = {0,0,0,0,0}
 local face = 5
