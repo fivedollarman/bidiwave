@@ -10,7 +10,7 @@
 
 
 engine.name = "BidiWave"
-local bidiarp = include("lib/bidiarp")
+local bidiarp = require "bidiwave/lib/bidiarp"
 
 local MusicUtil = require "musicutil"
 local midi_in_device
@@ -18,8 +18,7 @@ local mpe_mode = false;
 local bidinote = 0
 local bidid = 0
 local bididoff = {}
-local countonid = 0
-local lastfive = {0,0,0,0,0}
+local counten = 0
 local face = 5
 local page = 0
 local wavesel = -1
@@ -65,12 +64,16 @@ local function midi_event(data)
       bidinote = msg.note
       
       if params:get("arpeggiator") == 2 then
-        for i=1,#arparray do
-          if arparray[i] == bidinote then
-            table.remove(arparray,i)
+        if #arparray > 1 then
+          for i=1,#arparray do
+            if arparray[i] == bidinote then
+              table.remove(arparray,i)
+            end
           end
+        else 
+          clock.cancel(arpvoice[1])
+          arparray = {}
         end
-      arpvoice[1] = clock.run(bidiarp.seq,1,4,#arparray,arparray)
       else
         engine.noteOff(bididoff[bidinote])
       end
@@ -83,27 +86,17 @@ local function midi_event(data)
       
       if params:get("arpeggiator") == 2 then
         arparray[#arparray+1] = bidinote
-        arpvoice[1] = clock.run(bidiarp.seq,1,4,#arparray,arparray)
+        arpvoice[1] = clock.run(bidiarp.seq,1,4,#arparray,arparray,1,8)
       else
-        for i = 1, 5 do
-          if lastfive[i]==bidinote then
-            countonid = (countonid+1)%8
-            bidid = bidinote*(countonid+2)
-            bididoff[bidinote] = bidid
-          else
-            bidid = bidinote
-            bididoff[bidinote] = bidid
-          end
-        end
-        counteight = (counteight+1)%8
-        lasteight[counteight+1] = bidinote
+        counten = (counten+1)%10
+        bidid = bidinote + (1000*(counten+1))
+        bididoff[bidinote] = bidid
         engine.noteOn(bidid, bidinote, msg.vel / 127)
       end
       
     -- Pitch bend
     elseif msg.type == "pitchbend" then
       local bend_st = (util.round(msg.val / 2)) / 8192 * 2 -1 -- Convert to -1 to 1
-      print(bend_st)
       local bend_range = params:get("bend_range")
       if mpe_mode then
         engine.pitchBend(MusicUtil.interval_to_ratio(bend_st * bend_range))
@@ -229,14 +222,14 @@ function init()
   params:add_control("wave2end", "wave 2 end", controlspec.new(0, 7, "lin", 1, 0, ""))
   params:set_action("wave2end", function(x) wavend(2,x) end)
   
-  params:add_control("detuneq", "detune interval", controlspec.new(0, 12, "lin", 0, 0, ""))
+  params:add_control("detuneq", "detune interval", controlspec.new(0, 0.5, "lin", 0, 0, ""))
   params:set_action("detuneq", function(x) engine.detuneQ(x) end)
   
-  params:add_control("filtcut", "filter cut", controlspec.new(-60, 60, "lin", 0, 0, ""))
+  params:add_control("filtcut", "filter cut", controlspec.new(-24, 96, "lin", 0, 0, ""))
   params:set_action("filtcut", function(x) engine.filtCut(x) end)
   
   params:add_control("filtenv", "filter envelope Q", controlspec.new(-60, 60, "lin", 0, 0, ""))
-  params:set_action("filtenv", function(x) engine.filtCut(x) end)
+  params:set_action("filtenv", function(x) engine.filtEnvQ(x) end)
   
   params:add_control("filtres", "filter resonance", controlspec.new(0.01, 1, "lin", 0.01, 1, ""))
   params:set_action("filtres", function(x) engine.filtRes(x) end)
@@ -619,6 +612,7 @@ function key(n, z)
     elseif page == 0 and z==0 then
       loadcolor = 12
       params:read(psetnum)
+      params:bang()
     
     elseif page == 2 and z==1 then
       pagepart = 1
