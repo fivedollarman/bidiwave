@@ -32,8 +32,8 @@ local crvs = {0,0,0,0,0}
 local targetedit = 0
 local valuedit = 0
 local pagepos = 0
-local modslist = {{"detuneq", "detunelfof", "detunelfoq"}, {"lfowavesfreq1", "lfoenvbal1"}, {"noteoffset", "lfowavesfreq2", "lfoenvbal2"}, {"crossmodql", "crossmodqr", "lfoxfreq", "lfoenvxbal"}, {"filtcut", "filtres", "filtenv"}}
-local modslistnm = {{"det", "nF", "/"}, {"nF", "/"}, {"trnsp", "nF", "/"}, {"QL", "QR", "nF", "/"}, {"cut", "res", "env"}}
+local modslist = {{"detuneq", "detunelfof", "detunelfoq"}, {"lfowavesfreq1", "lfoenvbal1"}, {"noteoffset", "lfowavesfreq2", "lfoenvbal2"}, {"crossmodql", "crossmodqr", "lfoxfreq", "lfoenvxbal"}, {"filtcut", "filtres", "filtenv", "filtmix"}}
+local modslistnm = {{"det", "nF", "/"}, {"nF", "/"}, {"trnsp", "nF", "/"}, {"QL", "QR", "nF", "/"}, {"cut", "res", "env", "x"}}
 local lfowavesfreq = {0,0}
 local lfoenvwavesbalance = {0,0}
 local crossq = {0,0}
@@ -64,7 +64,7 @@ local function midi_event(data)
       bidinote = msg.note
       
       if params:get("arpeggiator") == 2 then
-        if #arparray > 1 then
+        if #arparray > 0 then
           for i=1,#arparray do
             if arparray[i] == bidinote then
               table.remove(arparray,i)
@@ -86,7 +86,12 @@ local function midi_event(data)
       
       if params:get("arpeggiator") == 2 then
         arparray[#arparray+1] = bidinote
-        arpvoice[1] = clock.run(bidiarp.seq,1,4,#arparray,arparray,1,8)
+        if #arparray > 1 then
+          clock.cancel(arpvoice[1])
+          arpvoice[1] = clock.run(bidiarp.seq,1,4,arparray,1,8)
+        else
+          arpvoice[1] = clock.run(bidiarp.seq,1,4,arparray,1,8)
+        end
       else
         counten = (counten+1)%10
         bidid = bidinote + (1000*(counten+1))
@@ -193,10 +198,13 @@ function init()
  
   for i = 1, 8 do
     params:add_file(i .. "wave", "wave " .. i, "/home/we/dust/audio/wavetables/sin_0001.wav")
-    params:set_action(i .. "wave", function(file) engine.assignWave(i, file) end)
+    params:set_action(i .. "wave", function(file) engine.assignWave(i-1, file) end)
   end
   
   params:add_separator()
+  
+  params:add_control("velq", "velocity sens", controlspec.new(0, 1, "lin", 0, 0.75, ""))
+  params:set_action("velq", function(x) engine.velQ(x) end)
   
   params:add_control("portamento", "portamento", controlspec.new(0, 5, "lin", 0, 0, "s"))
   params:set_action("portamento", function(x) engine.portam(x) end)
@@ -225,14 +233,17 @@ function init()
   params:add_control("detuneq", "detune interval", controlspec.new(0, 0.5, "lin", 0, 0, ""))
   params:set_action("detuneq", function(x) engine.detuneQ(x) end)
   
-  params:add_control("filtcut", "filter cut", controlspec.new(-24, 96, "lin", 0, 0, ""))
+  params:add_control("filtcut", "filter cut", controlspec.new(0, 48, "lin", 0, 0, ""))
   params:set_action("filtcut", function(x) engine.filtCut(x) end)
   
-  params:add_control("filtenv", "filter envelope Q", controlspec.new(-60, 60, "lin", 0, 0, ""))
+  params:add_control("filtenv", "filter envelope Q", controlspec.new(-36, 36, "lin", 0, 0, ""))
   params:set_action("filtenv", function(x) engine.filtEnvQ(x) end)
   
   params:add_control("filtres", "filter resonance", controlspec.new(0.01, 1, "lin", 0.01, 1, ""))
   params:set_action("filtres", function(x) engine.filtRes(x) end)
+  
+  params:add_control("filtmix", "filter mix", controlspec.new(-1, 1, "lin", 0, 1, ""))
+  params:set_action("filtmix", function(x) engine.filtMix(x) end)
     
   params:add_separator("envelopes")
   
@@ -295,6 +306,7 @@ function init()
   -- load default pset
   params:read()
   params:bang()
+  print("init done")
   
 end
 
