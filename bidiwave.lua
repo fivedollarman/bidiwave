@@ -25,7 +25,7 @@ local wavesel = -1
 local wstartendsel = -1
 local pagepart = 1
 local envtargets = {"AmpFil", "Wave1", "Wave2", "Cross"}
-local envedit = {1, 1, 1, 1}
+local envedit = {1, 0, 0, 0}
 local lvls = {0,0,0,0,0,0}
 local tms = {0,0,0,0,0}
 local crvs = {0,0,0,0,0}
@@ -42,9 +42,12 @@ local wend = {0,0}
 local savecolor = 12
 local loadcolor = 12
 local psetnum = 1
-local arparray = {}
 local arp = {"off","on"}
 local arpvoice = {}
+local lastvel = 0
+local arplistmode = {}
+local arparray = {}
+
 
 -- MIDI input
 local function midi_event(data)
@@ -70,8 +73,12 @@ local function midi_event(data)
               table.remove(arparray,i)
             end
           end
+        clock.cancel(arpvoice[1])
+        clock.transport.reset()
+        arpvoice[1] = clock.run(bidiarp.seq,params:get("arpnum"),params:get("arpden"),arparray,params:get("arpdur"),lastvel,arplistmode)
         else 
           clock.cancel(arpvoice[1])
+          lock.transport.reset()
           arparray = {}
         end
       else
@@ -88,9 +95,12 @@ local function midi_event(data)
         arparray[#arparray+1] = bidinote
         if #arparray > 1 then
           clock.cancel(arpvoice[1])
-          arpvoice[1] = clock.run(bidiarp.seq,1,4,arparray,1,8)
+          clock.transport.reset()
+          arpvoice[1] = clock.run(bidiarp.seq,params:get("arpnum"),params:get("arpden"),arparray,params:get("arpdur"),msg.vel/127,arplistmode)
+          lastvel = msg.vel/127
         else
-          arpvoice[1] = clock.run(bidiarp.seq,1,4,arparray,1,8)
+          clock.transport.start()
+          arpvoice[1] = clock.run(bidiarp.seq,params:get("arpnum"),params:get("arpden"),arparray,params:get("arpdur"),msg.vel/127,arplistmode)
         end
       else
         counten = (counten+1)%10
@@ -101,7 +111,7 @@ local function midi_event(data)
       
     -- Pitch bend
     elseif msg.type == "pitchbend" then
-      local bend_st = (util.round(msg.val / 2)) / 8192 * 2 -1 -- Convert to -1 to 1
+      local bend_st = (util.round(msg.val / 2)) / 8192 * 2 -1 
       local bend_range = params:get("bend_range")
       if mpe_mode then
         engine.pitchBend(MusicUtil.interval_to_ratio(bend_st * bend_range))
@@ -120,6 +130,22 @@ local function midi_event(data)
   
   end
   
+end
+
+function clock.transport.start()
+  running = true
+  bidistep = 0
+  countseq = 0
+end
+
+function clock.transport.stop()
+  running = false
+  stop()
+end
+
+function clock.transport.reset()
+  bidistep = 0
+  countseq = 0
 end
 
 function fround(number, decimals)
@@ -192,7 +218,17 @@ function init()
   table.insert(channels, "MPE")
   params:add{type = "option", id = "midi_channel", name = "MIDI Channel", options = channels}
   params:add{type = "number", id = "bend_range", name = "Pitch Bend Range", min = 1, max = 48, default = 2}
+  
+  params:add_separator("arpeggio")
+  
+  arplistmode["cyc"] = {1,1,3}
+  arplistmode["step"] = {1,5,0}
+  
   params:add_option("arpeggiator","arpeggiator",arp,1)
+  
+  params:add_control("arpnum", "arp clock num", controlspec.new(1, 8, "lin", 1, 1, ""))
+  params:add_control("arpden", "arp clock den", controlspec.new(1, 8, "lin", 1, 4, ""))
+  params:add_control("arpdur", "arp note dur", controlspec.new(0.125, 1, "lin", 0.125, 0.5, ""))
   
   params:add_separator("waves")
  
@@ -209,13 +245,13 @@ function init()
   params:add_control("portamento", "portamento", controlspec.new(0, 5, "lin", 0, 0, "s"))
   params:set_action("portamento", function(x) engine.portam(x) end)
   
-  params:add_control("noteoffset", "osc 2 note offset", controlspec.new(-36, 36, "lin", 1, 0, ""))
+  params:add_control("noteoffset", "wave2 note offset", controlspec.new(-36, 36, "lin", 1, 0, ""))
   params:set_action("noteoffset", function(x) engine.noteOffset(x) end)
   
-  params:add_control("crossmodql", "cross modulation left", controlspec.new(-1, 1, "lin", 0, 0, ""))
+  params:add_control("crossmodql", "cross mod left", controlspec.new(-1, 1, "lin", 0, 0, ""))
   params:set_action("crossmodql", function(x) crossmod(1,x) end)
   
-  params:add_control("crossmodqr", "cross modulation right", controlspec.new(-1, 1, "lin", 0, 0, ""))
+  params:add_control("crossmodqr", "cross mod right", controlspec.new(-1, 1, "lin", 0, 0, ""))
   params:set_action("crossmodqr", function(x) crossmod(2,x) end)
   
   params:add_control("wave1start", "wave 1 start", controlspec.new(0, 7, "lin", 1, 0, ""))
@@ -285,28 +321,27 @@ function init()
   params:add_control("detunelfoq", "detune lfo Q", controlspec.new(0, 1, "lin", 0, 0, ""))
   params:set_action("detunelfoq", function(x) engine.detuneLfoQ(x) end)
   
-  params:add_control("lfowavesfreq1", "lfo wavetable 1 mod freq", controlspec.new(0, 8, "lin", 0, 0, "hz"))
+  params:add_control("lfowavesfreq1", "lfo wave1 mod freq", controlspec.new(0, 8, "lin", 0, 0, "hz"))
   params:set_action("lfowavesfreq1", function(x) lfowf(1,x) end)
   
-  params:add_control("lfowavesfreq2", "lfo wavetable 2 mod freq", controlspec.new(0, 8, "lin", 0, 0, "hz"))
+  params:add_control("lfowavesfreq2", "lfo wave2 mod freq", controlspec.new(0, 8, "lin", 0, 0, "hz"))
   params:set_action("lfowavesfreq2", function(x) lfowf(2,x) end)
   
-  params:add_control("lfoenvbal1", "lfo env wavetable 1 bal", controlspec.new(0, 1, "lin", 0, 0, ""))
+  params:add_control("lfoenvbal1", "lfo env wave1 bal", controlspec.new(0, 1, "lin", 0, 0, ""))
   params:set_action("lfoenvbal1", function(x) lfoenvw(1,x) end)
   
-  params:add_control("lfoenvbal2", "lfo env wavetable 2 bal", controlspec.new(0, 1, "lin", 0, 0, ""))
+  params:add_control("lfoenvbal2", "lfo env wave2 bal", controlspec.new(0, 1, "lin", 0, 0, ""))
   params:set_action("lfoenvbal2", function(x) lfoenvw(2,x) end)
   
   params:add_control("lfoxfreq", "lfo cross mod freq", controlspec.new(0, 8, "lin", 0, 0, "hz"))
   params:set_action("lfoxfreq", function(x) engine.lfoXFreq(x) end)
   
-  params:add_control("lfoenvxbal", "lfo env cross mod bal", controlspec.new(0, 1, "lin", 0, 0, ""))
+  params:add_control("lfoenvxbal", "lfo env cross bal", controlspec.new(0, 1, "lin", 0, 0, ""))
   params:set_action("lfoenvxbal", function(x) engine.lfoXFreq(x) end)
   
   -- load default pset
   params:read()
   params:bang()
-  print("init done")
   
 end
 
