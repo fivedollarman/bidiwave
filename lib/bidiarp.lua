@@ -45,16 +45,16 @@ function bidiarp.seq(num,den,list,dur,vel,listmode)
         end
         
         if listmode["step"][1] == 1 then -- for steps
+          stepcount = (stepcount+1)%listmode["step"][2]
           if stepcount == 0 then
             skip = listmode["step"][3]
-            stepcount = (stepcount+1)%listmode["step"][2]
           else 
             skip = 0
           end 
         elseif listmode["step"][1] == 2 then
+          stepcount = (stepcount+1)%listmode["step"][2]
           if stepcount == 0 then
             mute = listmode["step"][3]/8
-            stepcount = (stepcount+1)%listmode["step"][2]
           else 
             mute = 1
           end 
