@@ -21,16 +21,16 @@ function bidiarp.seq(num,den,list,dur,vel,listmode)
       bidistep = (bidistep+1) % #rlist
       if listmode then -- arpeggiator algos
         if listmode["cyc"][1] == 1 then -- for cycles
-          oct = oct(bidistep,listmode["cyc"][2],listmode["cyc"][3])
+          oct = octcyc(bidistep,listmode["cyc"][2],listmode["cyc"][3])
         elseif listmode["cyc"][1] == 2 then
           bidistep = bidistep+skipcyc(bidistep,listmode["cyc"][2],listmode["cyc"][3])
         else
           oct = 0
         end
         if listmode["step"][1] == 1 then -- for steps
-          mute = mute(bidistep,listmode["step"][2],listmode["step"][3])
-        elseif listmode["step"][1] == 2 then
           bidistep = bidistep+skip(bidistep,listmode["step"][2],listmode["step"][3])
+        elseif listmode["step"][1] == 2 then
+          mute = mutestep(bidistep,listmode["step"][2],listmode["step"][3])
         else
           oct = 0
         end
@@ -39,12 +39,12 @@ function bidiarp.seq(num,den,list,dur,vel,listmode)
   engine.noteOffAll()
 end
 
-function oct(step,every,nfor)
+function octcyc(step,every,nfor)
   local octave = 0
     if step == 0 then
       if cycount == every-1 then
         octave = (octave+1)%nfor
-        cyccount = cyccount+1%every
+        cycount = cycount+1%every
       end
     end
   return octave
@@ -72,7 +72,7 @@ function skip(step,every,skip)
   return skip
 end
 
-function mute(step,every,mute)
+function mutestep(step,every,mute)
     if stepcount == 0 then
       mute = mute/8
       stepcount = stepcount+1%every
