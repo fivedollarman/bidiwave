@@ -17,9 +17,13 @@ function bidiarp.seq(num,den,list,dur,vel,listmode)
       countseq = (countseq+1) % 10
       bidistep = (bidistep+1+skip) % #rlist
       bidid = rlist[bidistep+1] + (1000*(countseq+1))
-      engine.noteOn(bidid,rlist[bidistep+1]+(oct*12),vel*mute)
+      if mute > 0 then
+        engine.noteOn(bidid,rlist[bidistep+1]+(oct*12),vel*mute)
+      end
       clock.sync(dursync)
-      engine.noteOff(bidid)
+      if mute > 0 then
+        engine.noteOff(bidid)
+      end
       clock.sync((num/den)-dursync)
       
       if listmode then -- arpeggiator algos
