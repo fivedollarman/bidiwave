@@ -4,12 +4,12 @@
 
 Engine_BidiWave : CroneEngine {
 
-  classvar maxNumVoices = 10;
+  classvar maxNumVoices = 5;
   var voiceGroup;
   var voiceList;
 
   var pitchBendRatio = 1;
-  var modwheel = 0;
+  var modwheel = 0, modwF = 8;
   var velQ = 0.75;
   var out=0, offsetnote=0, prevnote=0, slideT=0, amp=0.25;
   var detQ=0.0125, lfdetF=0.5, lfdetQ=0.1, cut=0, filtEnvQ=12, reson=1, xfilt=1, lfxF=0.125, xlfEnvQ=0.5;
@@ -72,13 +72,13 @@ Engine_BidiWave : CroneEngine {
 
 		// Synth voice
 		SynthDef(\BidiWave, {
-			arg out, buf, gate=0, killGate=1, note=64, offsetnote=0, prevnote=64, pitchBendRatio=1, modw, slideT, amp, xfilt,
+			arg out, buf, gate=0, killGate=1, note=64, offsetnote=0, prevnote=64, pitchBendRatio=1, modw, modwF, slideT, amp, xfilt, 
 			  detQ, lfdetF, lfdetQ, lfxF, lfwaveF=#[0.25,0.8], lfEnvQ=#[1,1], waveStart=#[0,3], waveEnd=#[4,7], xlfEnvQ, xQ=#[-1,1], cut, filtEnvQ, reson,
 	      l1=#[0,0,0,0], l2=#[1,1,1,1], l3=#[0.5,0.25,0.5,0.25], l4=#[0.125,0.5,0.25,0.5], l5=#[0.5,0.5,0.5,0.5], l6=#[0,1,0,1],
         t1=#[0.01,0.02,0.1,0.5], t2=#[4,3,2,1], t3=#[1,2,3,4], t4=#[2,1.5,1,0.5], t5=#[8,6,4,2],
         c1=#[0,0,0,0], c2=#[0,0,0,0], c3=#[0,0,0,0], c4=#[0,0,0,0], c5=#[0,0,0,0],
       	relP, loopP, offset=1;
-      var envelope, killEnvelope, signal, signalF, envp, bufpos, xfade, detSig, notesli;
+      var envelope, killEnvelope, signal, signalF, envp, bufpos, xfade, detSig, notesli, modwLfo;
 
 			killGate = killGate + Impulse.kr(0); 
 			killEnvelope = EnvGen.kr(envelope: Env.asr( 0, 1, 0.05), gate: killGate, doneAction: Done.freeSelf);
@@ -86,18 +86,18 @@ Engine_BidiWave : CroneEngine {
 			envp = Env.new([l1,l2,l3,l4,l5,l6],[t1,t2,t3,t4,t5],[c1,c2,c3,c4,c5],relP,loopP,offset);
 			envelope = EnvGen.kr(envelope: envp, gate: gate, doneAction: [Done.freeSelf,0,0,0]);
 			
-    	detSig = ((detQ*[0,1,2]) + LFNoise2.kr(lfdetF!6).bipolar(lfdetQ)).midiratio;
+    	modwLfo = 1-LFPar.kr(modw*modwF, 0, 0.5, 0.5);
+    	detSig = ((detQ*[0,1,2] * modwLfo) + LFNoise2.kr(lfdetF!6).bipolar(lfdetQ*modwLfo)).midiratio;
     	notesli = XLine.kr(prevnote, note, slideT);
      	bufpos = buf + envelope[1..2].range(waveStart,abs(waveEnd-lfEnvQ)) + LFNoise2.kr(lfwaveF).unipolar(lfEnvQ);
      	xfade = envelope[3].bipolar((1-xlfEnvQ)*xQ) + LFNoise2.kr(lfxF).bipolar(xlfEnvQ*xQ);
      	
     	signal = LinXFade2.ar(VOsc.ar(bufpos[0], notesli.midicps * detSig * pitchBendRatio), VOsc.ar(bufpos[1], (notesli+offsetnote).midicps * detSig * pitchBendRatio), xfade);
     	signal = Splay.ar(signal) * envelope[0] * amp * 0.125;
-    	signalF = RLPF.ar(signal,(0.419 + note + cut + envelope[0].range(0, filtEnvQ*amp)).midicps, reson);
+    	signalF = RLPF.ar(signal,(0.618 + note + cut + envelope[0].range(0, filtEnvQ*amp)).midicps * modwLfo, reson);
     	signal = LinXFade2.ar(signal, signalF, xfilt);
       Out.ar(out, signal);
 		}).add;
-
 
 		// Commands
 
@@ -127,7 +127,9 @@ Engine_BidiWave : CroneEngine {
 		  		\note, note,
 		  		\offsetnote, offsetnote,
 	  			\prevnote, prevnote,
+	  			\slideT, slideT,
 	  			\pitchBendRatio, pitchBendRatio,
+	  			\modwF, modwF,
 	  			\gate, 1,
 	  			\amp, vel.linlin(0, 1, 1-velQ, 1),
 	  			\cut, cut,
@@ -215,6 +217,12 @@ Engine_BidiWave : CroneEngine {
 		this.addCommand(\modwheel, "f", { arg msg;
 			modwheel = msg[1];
 			voiceGroup.set(\modw, modwheel);
+		});
+		
+		// modwheelLfoFreq(hz)
+		this.addCommand(\modwheelLfoFreq, "f", { arg msg;
+			modwF = msg[1];
+			voiceGroup.set(\modwF, modwF);
 		});
 		
 	  // assignWave(id,path)
