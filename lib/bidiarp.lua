@@ -12,6 +12,16 @@ function bidiarp.seq(num,den,list,dur,vel,listmode)
   local skip = 0
   local stepcount = 0
   local cycount = 0
+  
+  if listmode["mode"] == 1 then
+    table.sort(rlist, function(a,b)
+    	return a < b
+    end)
+  elseif listmode["mode"] == 2 then
+        table.sort(rlist, function(a,b)
+    	return a > b
+    end)
+  end
 
   while #list > 0 do
       countseq = (countseq+1) % 10
