@@ -4,6 +4,8 @@ wavetable synth for monome norns
 # requirments
 norns, MIDI
 
+<iframe width="560" height="315" src="https://www.youtube.com/embed/ab8NMI8u-go" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
 # documentation
 enc 1 -> change pages (hello, MIDI, wavetables, envelopes, modulations)<br>
 key 2 and key 3 -> navigate page sections <br>
