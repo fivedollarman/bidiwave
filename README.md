@@ -15,7 +15,7 @@ arpeggiator can be freezed to continue play in background, just select "freez" w
 
 # download
 GitHub https://github.com/fivedollarman/bidiwave <br>
-Install from Matron: ;install https://github.com/fivedollarman/bidiwave
+Install from Matron: <code>;install https://github.com/fivedollarman/bidiwave</code>
 
 # notes
 The very first time you open it you have to set envelopes levels and times to make it sound
