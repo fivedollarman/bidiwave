@@ -24,7 +24,7 @@ local wavesel = -1
 local wstartendsel = -1
 local pagepart = 1
 local envtargets = {"AmpFil", "Wave1", "Wave2", "Cross"}
-local envedit = {1, 0, 0, 0}
+local envedit = {1, 1, 1, 1}
 local lvls = {0,0,0,0,0,0}
 local tms = {0,0,0,0,0}
 local crvs = {0,0,0,0,0}
@@ -41,14 +41,15 @@ local wend = {0,0}
 local savecolor = 12
 local loadcolor = 12
 local psetnum = 1
-local arp = {"off","play","up","down"}
-local arpcyc = {"nope","octave","skip"}
+local arp = {"off","freez","play","up","down"}
+local arpcyc = {"nope","octav","skip"}
 local arpstp = {"nope","skip","mute"}
 local arpvoice = {}
 local lastvel = 0
 local arplistmode = {}
 local arparray = {}
 local arraynote = {}
+local floatstep = {0,0,0,0}
 
 
 -- MIDI input
@@ -70,7 +71,7 @@ local function midi_event(data)
       arraynote[bidinote] = 0
       if page == 1 then redraw() end
       
-      if params:get("arpeggiator") > 1 then
+      if params:get("arpeggiator") > 2 then
         if #arparray > 0 then
           for i=1,#arparray do
             if arparray[i] == bidinote then
@@ -96,7 +97,7 @@ local function midi_event(data)
       arraynote[bidinote] = 1
       if page == 0 or page == 1 then redraw() end
       
-      if params:get("arpeggiator") > 1 then
+      if params:get("arpeggiator") > 2 then
         arparray[#arparray+1] = bidinote
         if #arparray > 1 then
           clock.cancel(arpvoice[1])
@@ -138,7 +139,6 @@ end
 
 function clock.transport.stop()
   running = false
-  stop()
 end
 
 function clock.transport.reset()
@@ -223,7 +223,7 @@ function init()
   params:add_control("modwLfoFreq", "modwheel Lfo Freq", controlspec.new(0, 8, "lin", 0, 0, "hz"))
   params:set_action("modwLfoFreq", function(x) engine.modwheelLfoFreq(x) end)
   
-  params:add_control("portamento", "portamento", controlspec.new(0, 5, "lin", 0, 0, "s"))
+  params:add_control("portamento", "portamento", controlspec.new(0, 2, "lin", 0, 0, "s"))
   params:set_action("portamento", function(x) engine.portam(x) end)
   
   for i=1,128 do
@@ -250,7 +250,7 @@ function init()
   params:set_action("arpcycev", function(x) arplistmode["cyc"][2] = x end)
   
   params:add_number("arpcycval","arp cycle value",0,8,0)
-  params:set_action("arpcycval", function(x) arplistmode["step"][3] = x end)
+  params:set_action("arpcycval", function(x) arplistmode["cyc"][3] = x end)
   
   params:add_option("arpstpfnc","arp step fnc",arpstp,1)
   params:set_action("arpstpfnc", function(x) arplistmode["step"][1] = x-1 end)
@@ -264,20 +264,20 @@ function init()
   params:add_separator("waves")
  
   for i = 1, 8 do
-    params:add_file(i .. "wave", "wave " .. i, "/home/we/dust/audio/wavetables/sin_0001.wav")
+    params:add_file(i .. "wave", "wave " .. i, "/home/we/dust/code/bidiwave/wavetables/sin_0001.wav")
     params:set_action(i .. "wave", function(file) engine.assignWave(i-1, file) end)
   end
   
-  params:add_control("wave1start", "wave 1 start", controlspec.new(0, 7, "lin", 1, 0, ""))
+  params:add_control("wave1start", "wave 1 start", controlspec.new(0, 7, "lin", 0, 0, ""))
   params:set_action("wave1start", function(x) wavestart(1,x) end)
   
-  params:add_control("wave2start", "wave 2 start", controlspec.new(0, 7, "lin", 1, 0, ""))
+  params:add_control("wave2start", "wave 2 start", controlspec.new(0, 7, "lin", 0, 0, ""))
   params:set_action("wave2start", function(x) wavestart(2,x) end)
   
-  params:add_control("wave1end", "wave 1 end", controlspec.new(0, 7, "lin", 1, 0, ""))
+  params:add_control("wave1end", "wave 1 end", controlspec.new(0, 7, "lin", 0, 0, ""))
   params:set_action("wave1end", function(x) wavend(1,x) end)
   
-  params:add_control("wave2end", "wave 2 end", controlspec.new(0, 7, "lin", 1, 0, ""))
+  params:add_control("wave2end", "wave 2 end", controlspec.new(0, 7, "lin", 0, 0, ""))
   params:set_action("wave2end", function(x) wavend(2,x) end)
   
   params:add_separator()
@@ -451,6 +451,10 @@ function redraw()
     screen.text("modw lfo")
     screen.move(104,22)
     screen.text(params:get("modwLfoFreq"))
+    screen.move(128,0)
+    if pagepos == 0 then screen.level(8) else screen.level(0) end
+    screen.line(128,32)
+    screen.stroke()
     
     screen.move(0,40)
     if pagepos == 1 and valuedit == 0 then screen.level(8) else screen.level(2) end
@@ -498,6 +502,10 @@ function redraw()
     if pagepos == 1 and valuedit == 9 then screen.level(8) else screen.level(2) end
     screen.move(90,56)
     screen.text(params:get("arpstpval"))
+    screen.move(128,33)
+    if pagepos == 1 then screen.level(8) else screen.level(0) end
+    screen.line(128,64)
+    screen.stroke()
     
   elseif page == 2 then -- wavetables page
     screen.level(8)
@@ -511,17 +519,17 @@ function redraw()
     screen.rect(4,18,44,44)
     screen.stroke()
     if wstartendsel == 0 then screen.level(8) else screen.level(1) end
-    screen.move(15,32)
-    screen.text(params:get("wave1start")+1)
+    screen.move(12,32)
+    screen.text(fround(params:get("wave1start")+1,1))
     if wstartendsel == 1 then screen.level(8) else screen.level(1) end
-    screen.move(33,32)
-    screen.text(params:get("wave1end")+1)
+    screen.move(30,32)
+    screen.text(fround(params:get("wave1end")+1,1))
     if wstartendsel == 2 then screen.level(8) else screen.level(1) end
-    screen.move(15,52)
-    screen.text(params:get("wave2start")+1)
+    screen.move(12,52)
+    screen.text(fround(params:get("wave2start")+1,1))
     if wstartendsel == 3 then screen.level(8) else screen.level(1) end
-    screen.move(33,52)
-    screen.text(params:get("wave2end")+1)
+    screen.move(30,52)
+    screen.text(fround(params:get("wave2end")+1,1))
     for i = 1, 8 do
       if i == wavesel+1 then
         screen.level(8)
@@ -529,7 +537,7 @@ function redraw()
         screen.level(1) 
       end
       screen.move(54,0+(i*8))
-      screen.text(i .. string.sub(params:get(i .. "wave"), 31))
+      screen.text(i .. string.sub(params:get(i .. "wave"), 39))
     end
     
   elseif page == 3 then -- envelopes page
@@ -649,7 +657,7 @@ function enc(n, d)
       
     elseif page == 1 and pagepos == 0 then
       valuedit = (valuedit+d)%4
-    elseif page == 1 and pagepos == 0 then
+    elseif page == 1 and pagepos == 1 then
       valuedit = (valuedit+d)%10
       
     elseif page == 2 then
@@ -674,7 +682,16 @@ function enc(n, d)
  
   elseif n == 3 then
     if page == 0 then
+      dd = d
       face = (face+d)%16
+      floatstep[1] = (floatstep[1]+(d/16))%7.0625
+      params:set("wave1start", floatstep[1])
+      floatstep[2] = (floatstep[2]+(d/16))%7.0625
+      params:set("wave1end", floatstep[2])
+      floatstep[3] = (floatstep[3]+(d/16))%7.0625
+      params:set("wave2start", floatstep[3])
+      floatstep[4] = (floatstep[4]+(d/16))%7.0625
+      params:set("wave2end", floatstep[4])
       
     elseif page == 1 and pagepos == 0 then 
       if valuedit == 0 then
@@ -689,6 +706,11 @@ function enc(n, d)
     elseif page == 1 and pagepos == 1 then 
       if valuedit == 0 then
         params:delta("arpeggiator", d)
+        if params:get("arpeggiator") == 1 and #arparray > 0 then
+            clock.cancel(arpvoice[1])
+            arparray = {} 
+            engine.noteOffAll()
+        end
       elseif valuedit == 1 then
         params:delta("arpnum", d)
       elseif valuedit == 2 then
@@ -714,13 +736,17 @@ function enc(n, d)
       params:delta(wavesel+1 .. "wave", d)
       else
         if wstartendsel == 0 then
-          params:delta("wave1start", d)
+          floatstep[1] = (floatstep[1]+(d/16))%7.0625
+          params:set("wave1start", floatstep[1])
         elseif wstartendsel == 1 then
-          params:delta("wave1end", d)
+          floatstep[2] = (floatstep[2]+(d/16))%7.0625
+          params:set("wave1end", floatstep[2])
         elseif wstartendsel == 2 then
-          params:delta("wave2start", d)
+          floatstep[3] = (floatstep[3]+(d/16))%7.0625
+          params:set("wave2start", floatstep[3])
         elseif wstartendsel == 3 then
-          params:delta("wave2end", d)
+          floatstep[4] = (floatstep[4]+(d/16))%7.0625
+          params:set("wave2end", floatstep[4])
         end 
       end
     
@@ -791,6 +817,7 @@ function key(n, z)
       loadcolor = 12
       params:read(psetnum)
       params:bang()
+      floatstep = {params:get("wave1start"), params:get("wave1end"), params:get("wave2start"), params:get("wave2end")}
       
     elseif page == 1 and z==1 then
       pagepos = 1
