@@ -5,10 +5,10 @@ wavetable synth for monome norns
 norns, MIDI
 
 # documentation
-enc 1 -> change pages
-key 2 and key 3 -> navigate sections
-enc 2 -> select value
-enc 3 change value
+enc 1 -> change pages <br>
+key 2 and key 3 -> navigate sections <br>
+enc 2 -> select value <br>
+enc 3 change value <br>
 
-wavetable must be 512 samples
+wavetable must be 512 samples <br>
 arpeggiator can be freezed to continue play in background, just select "freez" while playing
