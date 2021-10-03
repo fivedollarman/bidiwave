@@ -12,7 +12,7 @@ key 2 and key 3 -> navigate page sections <br>
 enc 2 -> select value <br>
 enc 3 -> change value <br>
 
-wavetable must be 512 samples .wav in "wavetable" folder<br>
+wavetables must be .wav audiofiles made by 512 samples in “wavetable” folder<br>
 arpeggiator can be freezed to continue play in background, just select "freez" while playing
 
 # installation
