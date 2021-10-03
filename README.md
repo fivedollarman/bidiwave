@@ -10,7 +10,7 @@ key 2 and key 3 -> navigate sections <br>
 enc 2 -> select value <br>
 enc 3 change value <br>
 
-wavetable must be 512 samples <br>
+wavetable must be 512 samples .wav <br>
 arpeggiator can be freezed to continue play in background, just select "freez" while playing
 
 # download
