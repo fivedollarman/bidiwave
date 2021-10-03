@@ -13,8 +13,7 @@ enc 3 -> change value <br>
 wavetable must be 512 samples .wav in "wavetable" folder<br>
 arpeggiator can be freezed to continue play in background, just select "freez" while playing
 
-# download
-GitHub https://github.com/fivedollarman/bidiwave <br>
+# installation
 Install from Matron: <code>;install https://github.com/fivedollarman/bidiwave</code>
 
 # notes
