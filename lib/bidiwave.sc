@@ -4,7 +4,7 @@
 
 Engine_BidiWave : CroneEngine {
 
-  classvar maxNumVoices = 5;
+  classvar maxNumVoices = 7;
   var voiceGroup;
   var voiceList;
 
@@ -86,15 +86,15 @@ Engine_BidiWave : CroneEngine {
 			envp = Env.new([l1,l2,l3,l4,l5,l6],[t1,t2,t3,t4,t5],[c1,c2,c3,c4,c5],relP,loopP,offset);
 			envelope = EnvGen.kr(envelope: envp, gate: gate, doneAction: [Done.freeSelf,0,0,0]);
 			
-    	modwLfo = 1-LFPar.kr(modw*modwF, 0, 0.5, 0.5);
+    	modwLfo = 1-LFPar.kr(modw*modwF).unipolar(modw);
     	detSig = ((detQ*[0,1,2] * modwLfo) + LFNoise2.kr(lfdetF!6).bipolar(lfdetQ*modwLfo)).midiratio;
     	notesli = XLine.kr(prevnote, note, slideT);
-     	bufpos = buf + envelope[1..2].range(waveStart,abs(waveEnd-lfEnvQ)) + LFNoise2.kr(lfwaveF).unipolar(lfEnvQ);
+     	bufpos = buf + envelope[1..2].range(Lag.kr(waveStart,0.05),abs(Lag.kr(waveEnd,0.05)-lfEnvQ)) + LFNoise2.kr(lfwaveF).unipolar(lfEnvQ);
      	xfade = envelope[3].bipolar((1-xlfEnvQ)*xQ) + LFNoise2.kr(lfxF).bipolar(xlfEnvQ*xQ);
      	
     	signal = LinXFade2.ar(VOsc.ar(bufpos[0], notesli.midicps * detSig * pitchBendRatio), VOsc.ar(bufpos[1], (notesli+offsetnote).midicps * detSig * pitchBendRatio), xfade);
     	signal = Splay.ar(signal) * envelope[0] * amp * 0.125;
-    	signalF = RLPF.ar(signal,(0.618 + note + cut + envelope[0].range(0, filtEnvQ*amp)).midicps * modwLfo, reson);
+    	signalF = RLPF.ar(signal,(Lag.kr(0.618 + note + cut, 0.05) + envelope[0].range(0, filtEnvQ*amp)).midicps * modwLfo, reson);
     	signal = LinXFade2.ar(signal, signalF, xfilt);
       Out.ar(out, signal);
 		}).add;
