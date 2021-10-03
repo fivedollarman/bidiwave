@@ -2,7 +2,7 @@
 --                  wavetable
 --       d('u')b       synthesizer
 -- 1.0.0 @marcocinque 
---
+-- llllllll.co/t/bidiwave-a-wavetable-synth-for-monome-norns/49223
 -- enc1 > pages
 -- key3 & key4 > page sections
 -- enc3 & enc4 > values
