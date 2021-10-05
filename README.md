@@ -22,11 +22,11 @@ On the second section you can activate an arpeggiator in three modes, “play”
 You can select an action (octave up or step skip) the arpeggiator does every n cycles and another action the arpeggiator does every n steps (skip step or muting), so it’s a little algo style arpeggiator.
 
 <b>wtables page</b><br>
-The synth use envelopes to interpolate between the eight wavetables you choose in this page, in the square you can set in order wave 1 table start and table end and wave 2 table start and end.
-You can add your own waves, they have to be .wav audiofiles made by 512 samples and have to be placed in “wavetable” folder.
+The synth use envelopes to interpolate between the eight waves you choose in this page, in the square you can set in order wave 1 start and end and wave 2 start and end.
+You can add your own waves, they have to be .wav audiofiles made by 512 samples and have to be placed in “wavetables” folder.
 
 <b>envelopes page</b><br>
-There are 4 envelopes, one controls amplitude and filter cut, other two navigate through the wavetables and the fourth is a crossfade control between the two waves.
+There are 4 envelopes, one controls amplitude and filter cut, other two navigate through the wavetable and the fourth is a crossfade control between the two waves.
 In the first line with enc 2 you can choose the envelope to show and edit, with enc 3 you can activate or deactivate editing. Every change in parameters will update the values of the active envelopes (the bright ones), it’s done for fast editing with so many parameters.
 At the end you can choose with enc 2 and 3 the loop and release points.
 
