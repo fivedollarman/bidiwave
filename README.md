@@ -22,7 +22,7 @@ On the second section you can activate an arpeggiator in three modes, “play”
 You can select an action (octave up or step skip) the arpeggiator does every n cycles and another action the arpeggiator does every n steps (skip step or muting), so it’s a little algo style arpeggiator.
 
 <b>wtables page</b><br>
-The synth use envelopes to interpolate between the eight waves you choose in this page, in the square you can set in order wave 1 start and end and wave 2 start and end.
+The synth use envelopes to interpolate between the eight waves you choose in this page, in the square you can set in order oscillator 1 interpolation start and end and oscillator 2 interpolation start and end.
 You can add your own waves, they have to be .wav audiofiles made by 512 samples and have to be placed in “wavetables” folder.
 
 <b>envelopes page</b><br>
