@@ -1,6 +1,7 @@
 // CroneEngine_BidiWave
 //
 // v1.0.0 
+// marcocinque d('u')b
 
 Engine_BidiWave : CroneEngine {
 
@@ -45,20 +46,20 @@ Engine_BidiWave : CroneEngine {
        warray[index] = arr;
     };
 
-		voiceGroup = Group.new(context.xg);
-		voiceList = List.new();
+    voiceGroup = Group.new(context.xg);
+    voiceList = List.new();
 		
-	  lfwaveF=Array.newClear(2);
-	  xQ=Array.newClear(2);
-	  lfEnvQ=Array.newClear(2);
-	  waveStart=Array.newClear(2);
-	  waveEnd=Array.newClear(2);
-	  l1=Array.newClear(4);
-	  l2=Array.newClear(4);
-	  l3=Array.newClear(4);
-	  l4=Array.newClear(4);
-	  l5=Array.newClear(4);
-	  l6=Array.newClear(4);
+    lfwaveF=Array.newClear(2);
+    xQ=Array.newClear(2);
+    lfEnvQ=Array.newClear(2);
+    waveStart=Array.newClear(2);
+    waveEnd=Array.newClear(2);
+    l1=Array.newClear(4);
+    l2=Array.newClear(4);
+    l3=Array.newClear(4);
+    l4=Array.newClear(4);
+    l5=Array.newClear(4);
+    l6=Array.newClear(4);
     t1=Array.newClear(4);
     t2=Array.newClear(4);
     t3=Array.newClear(4);
@@ -71,20 +72,20 @@ Engine_BidiWave : CroneEngine {
     c5=Array.newClear(4);
 
 		// Synth voice
-		SynthDef(\BidiWave, {
-			arg out, buf, gate=0, killGate=1, note=64, offsetnote=0, prevnote=64, pitchBendRatio=1, modw, modwF, slideT, amp, xfilt, 
-			  detQ, lfdetF, lfdetQ, lfxF, lfwaveF=#[0.25,0.8], lfEnvQ=#[1,1], waveStart=#[0,3], waveEnd=#[4,7], xlfEnvQ, xQ=#[-1,1], cut, filtEnvQ, reson,
-	      l1=#[0,0,0,0], l2=#[1,1,1,1], l3=#[0.5,0.25,0.5,0.25], l4=#[0.125,0.5,0.25,0.5], l5=#[0.5,0.5,0.5,0.5], l6=#[0,1,0,1],
+	SynthDef(\BidiWave, {
+	arg out, buf, gate=0, killGate=1, note=64, offsetnote=0, prevnote=64, pitchBendRatio=1, modw, modwF, slideT, amp, xfilt, 
+	detQ, lfdetF, lfdetQ, lfxF, lfwaveF=#[0.25,0.8], lfEnvQ=#[1,1], waveStart=#[0,3], waveEnd=#[4,7], xlfEnvQ, xQ=#[-1,1], cut, filtEnvQ, reson,
+	l1=#[0,0,0,0], l2=#[1,1,1,1], l3=#[0.5,0.25,0.5,0.25], l4=#[0.125,0.5,0.25,0.5], l5=#[0.5,0.5,0.5,0.5], l6=#[0,1,0,1],
         t1=#[0.01,0.02,0.1,0.5], t2=#[4,3,2,1], t3=#[1,2,3,4], t4=#[2,1.5,1,0.5], t5=#[8,6,4,2],
         c1=#[0,0,0,0], c2=#[0,0,0,0], c3=#[0,0,0,0], c4=#[0,0,0,0], c5=#[0,0,0,0],
       	relP, loopP, offset=1;
-      var envelope, killEnvelope, signal, signalF, envp, bufpos, xfade, detSig, notesli, modwLfo;
+        var envelope, killEnvelope, signal, signalF, envp, bufpos, xfade, detSig, notesli, modwLfo;
 
-			killGate = killGate + Impulse.kr(0); 
-			killEnvelope = EnvGen.kr(envelope: Env.asr( 0, 1, 0.05), gate: killGate, doneAction: Done.freeSelf);
+	killGate = killGate + Impulse.kr(0); 
+	killEnvelope = EnvGen.kr(envelope: Env.asr( 0, 1, 0.05), gate: killGate, doneAction: Done.freeSelf);
 			
-			envp = Env.new([l1,l2,l3,l4,l5,l6],[t1,t2,t3,t4,t5],[c1,c2,c3,c4,c5],relP,loopP,offset);
-			envelope = EnvGen.kr(envelope: envp, gate: gate, doneAction: [Done.freeSelf,0,0,0]);
+	envp = Env.new([l1,l2,l3,l4,l5,l6],[t1,t2,t3,t4,t5],[c1,c2,c3,c4,c5],relP,loopP,offset);
+	envelope = EnvGen.kr(envelope: envp, gate: gate, doneAction: [Done.freeSelf,0,0,0]);
 			
     	modwLfo = 1-LFPar.kr(modw*modwF).unipolar(modw);
     	detSig = ((detQ*[0,1,2] * modwLfo) + LFNoise2.kr(lfdetF!6).bipolar(lfdetQ*modwLfo)).midiratio;
@@ -96,8 +97,8 @@ Engine_BidiWave : CroneEngine {
     	signal = Splay.ar(signal) * envelope[0] * amp * 0.125;
     	signalF = RLPF.ar(signal,(Lag.kr(0.618 + note + cut, 0.05) + envelope[0].range(0, filtEnvQ*amp)).midicps * modwLfo, reson);
     	signal = LinXFade2.ar(signal, signalF, xfilt);
-      Out.ar(out, signal);
-		}).add;
+        Out.ar(out, signal);
+	}).add;
 
 		// Commands
 
