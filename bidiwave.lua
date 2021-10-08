@@ -264,7 +264,7 @@ function init()
   params:add_separator("waves")
  
   for i = 1, 8 do
-    params:add_file(i .. "wave", "wave " .. i, "/home/we/dust/code/bidiwave/wavetables/sin_0001.wav")
+    params:add_file(i .. "wave", "wave " .. i, "/home/we/dust/code/bidiwave/waveforms/sin_0001.wav")
     params:set_action(i .. "wave", function(file) engine.assignWave(i-1, file) end)
   end
   
