@@ -176,7 +176,7 @@ local function lfowf(id,freq)
 end
 
 local function lfoenvw(id,q)
-  lfowavesfreq[id] = q
+  lfoenvwavesbalance[id] = q
   engine.lfoEnvWavesBalance(lfoenvwavesbalance[1],lfoenvwavesbalance[2])
 end
 
