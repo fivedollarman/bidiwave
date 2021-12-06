@@ -3,7 +3,7 @@ wavetable synth for monome norns
 
 https://youtu.be/ab8NMI8u-go
 
-# requirments
+# requirements
 norns, MIDI
 
 # documentation
