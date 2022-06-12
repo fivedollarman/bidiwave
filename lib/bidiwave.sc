@@ -95,7 +95,7 @@ Engine_BidiWave : CroneEngine {
      	
     	signal = LinXFade2.ar(VOsc.ar(bufpos[0], notesli.midicps * detSig * pitchBendRatio), VOsc.ar(bufpos[1], (notesli+offsetnote).midicps * detSig * pitchBendRatio), xfade);
     	signal = Splay.ar(signal) * envelope[0] * amp * 0.125;
-    	signalF = RLPF.ar(signal,(Lag.kr(0.618 + note + cut, 0.05) + envelope[0].range(0, filtEnvQ*amp)).midicps * modwLfo, reson);
+    	signalF = RLPF.ar(signal,Clip.kr((Lag.kr(0.618 + note + cut, 0.05) + envelope[0].range(0, filtEnvQ*amp)).midicps * modwLfo, 8, 24000), reson);
     	signal = LinXFade2.ar(signal, signalF, xfilt);
         Out.ar(out, signal);
 	}).add;
